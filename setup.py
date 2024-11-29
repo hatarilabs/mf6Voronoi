@@ -1,5 +1,5 @@
 import setuptools
-from packagename.version import Version
+from mf6Voronoi.version import Version
 
 
 setuptools.setup(name='py-boilerplate',

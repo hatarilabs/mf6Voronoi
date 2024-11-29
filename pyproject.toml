@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mf6Voronoi"
+version = "0.1.0"
+description = "Voronoi mesh generator for MODFLOW6 Disv models"
+authors = [
+    {name = "Saul Montoya", email = "saulmontoya@hatarilabs.com"}
+]
+dependencies = [
+    "requests>=2.25.1",
+    "numpy==1.21.0"
+]
+readme = "README.md"
