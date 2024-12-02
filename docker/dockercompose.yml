@@ -1,0 +1,14 @@
+
+version: '3.8'
+
+services:
+  mf6voronoi:
+    image: mf6voronoi-jupyterlab:latest  
+    ports:
+      - "8888:8888"
+    volumes:
+      - ../voronoiMeshMF6/:/home/jovyan/voronoiMeshMF6
+      - ../script/:/home/jovyan/script
+      - ../examples/:/home/jovyan/examples
+    
+    
