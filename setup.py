@@ -1,5 +1,5 @@
 import setuptools
-from mf6Voronoi.version import Version
+from voronoiMeshMF6.version import Version
 
 
 setuptools.setup(name='py-boilerplate',

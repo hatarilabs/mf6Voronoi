@@ -1,5 +1,5 @@
 import numpy as np
-import copy
+import copy, sys
 import tqdm, time
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ from collections import OrderedDict
 
 class createVoronoi():
     def __init__(self):
-        self.discArrays = {}
+        self.discGeoms = {}
         self.modelDis = {}
         self.pairArray = None
 
@@ -42,70 +42,97 @@ class createVoronoi():
         self.modelDis['limitGeometry'] = limitGeom
         self.modelDis['crs'] = limitShape.crs
 
-    def defineParameters(self, maxRef=500, minRef=50, stages=5):
+    def defineParameters(self, maxRef=500, minRef=50, multiplier=1):
         #Define the refinement sizes
-        self.modelDis['refSizeList'] = np.linspace(maxRef,minRef,stages)
+        distList = [minRef]
+        i=1
+        while distList[-1] <= maxRef:
+            #print(distList)
+            distValue = distList[-1] + multiplier**i*minRef
+            if distValue <= maxRef:
+                distList.append(distValue)       
+            else:
+                break
+            i+=1
+
+        self.modelDis['refSizeList'] = np.array(distList)
+        self.modelDis['maxRef'] = maxRef
+        self.modelDis['minRef'] = minRef
+        #self.modelDis['refSizeList'] = [minRef + index*]
         print('\n/--------Sumary of cell discretization-------/')
-        print('Maximun refinement: %.2f m.'%self.modelDis['refSizeList'].max())
-        print('Minimum refinement: %.2f m.'%self.modelDis['refSizeList'].min())
+        print('Maximun refinement progressive: %.2f m.'%self.modelDis['refSizeList'].max())
+        print('Maximun refinement coarse areas: %.2f m.'%self.modelDis['maxRef'])
+        print('Minimum refinement: %.2f m.'%self.modelDis['minRef'])
         print('Cell size list: %s m.'%str(self.modelDis['refSizeList']))
         print('/--------------------------------------------/\n',flush=True)
 
     def addLayer(self, name, shapePath):
         #Add layers for mesh definition
         #This feature also clips and store the geometry
-        shape = fiona.open(shapePath)
-        discGeomList = []
-        #if shape[0]['geometry']['type'] == 'Polygon':
-        if shape.schema['geometry'] == 'Polygon':
-            for poly in shape:
-                for part in poly['geometry']['coordinates']:
-                    polyGeom = Polygon(part)
-                    discGeomClip =  self.modelDis['limitGeometry'].intersection(polyGeom)
+        #geomList is allways a Python of Shapely geometries
+        
+        spatialDf = gpd.read_file(shapePath)     
+        #auxiliary funtion to intersect:
+        def intersectGeom(anyGeom, partType, multiPartType):
+            discGeomList = []
+            #print(anyGeom.geoms)
+            try:
+                for partGeom in anyGeom.geoms:
+                    discGeomClip =  self.modelDis['limitGeometry'].intersection(partGeom)
                     if not discGeomClip.is_empty:
                         discGeomList.append(discGeomClip)
+            except AttributeError:
+                discGeomClip =  self.modelDis['limitGeometry'].intersection(anyGeom)
+                if not discGeomClip.is_empty:
+                    discGeomList.append(discGeomClip)
             unaryPoly = unary_union(discGeomList)
-            if unaryPoly.geom_type == 'MultiPolygon':
-                unaryMulti = unaryPoly
-            elif unaryPoly.geom_type == 'Polygon':
-                unaryMulti = MultiPolygon([unaryPoly])
-            discGeomList = [poly for poly in unaryMulti.geoms]
-            self.discArrays[name] = {'type':'Polygon', 'geomList':discGeomList}
-            self.modelDis['discGeomClip'] = unary_union(discGeomList)
-        #elif shape[0]['geometry']['type'] == 'LineString':
-        elif shape.schema['geometry'] == 'LineString':
-            for line in shape:
-                if shape[0]['geometry']['type'] == 'LineString':
-                    lineGeom = LineString(line['geometry']['coordinates'])
-                    discGeomClip =  self.modelDis['limitGeometry'].intersection(lineGeom)
-                    if not discGeomClip.is_empty:
-                        discGeomList.append(discGeomClip)
-                elif shape[0]['geometry']['type'] == 'MultiLineString':
-                    for linePart in line['geometry']['coordinates']:
-                        lineGeom = LineString(linePart)
-                        discGeomClip =  self.modelDis['limitGeometry'].intersection(lineGeom)
-                        if not discGeomClip.is_empty:
-                            discGeomList.append(discGeomClip)
-            self.discArrays[name] = {'type':'LineString', 'geomList':discGeomList}
-        elif shape[0]['geometry']['type'] == 'MultiLineString':
-            for line in shape:
-                print(line['geometry']['coordinates'])
-                lineGeom = LineString(line['geometry']['coordinates'])
-                discGeomClip =  self.modelDis['limitGeometry'].intersection(lineGeom)
-                if not discGeomClip.is_empty:
-                    discGeomList.append(discGeomClip)
-            self.discArrays[name] = {'type':'LineString', 'geomList':discGeomList}
-        elif shape.schema['geometry'] == 'Point':
-            for point in shape:
-                pointGeom = Point(point['geometry']['coordinates'])
-                discGeomClip =  self.modelDis['limitGeometry'].intersection(pointGeom)
-                if not discGeomClip.is_empty:
-                    discGeomList.append(discGeomClip)
-            self.discArrays[name] = {'type':'Point', 'geomList':discGeomList}
-        else:
-            print('You are working with a uncompatible geometry. Remember to use single parts')
-            print('Check this file: %s \n'%shapePath)
-            exit()
+            if unaryPoly.geom_type == partType:
+                unaryFilter = [unaryPoly]
+            elif unaryPoly.geom_type == multiPartType:
+                unaryFilter = [poly for poly in unaryPoly.geoms]
+            return unaryFilter
+
+        #looping over the shapefile
+        for spatialIndex, spatialRow in spatialDf.iterrows():\
+            #working for polygons and multipolygons
+            if spatialRow.geometry.geom_type == 'Polygon':
+                polyGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(polyGeom,'Polygon','MultiPolygon')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'Polygon', 'geomList':unaryFilter}
+                #self.modelDis['discGeomClip'] = unary_union(discGeomList)
+
+            elif spatialRow.geometry.geom_type == 'MultiPolygon':
+                multiPolyGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(multiPolyGeom,'Polygon','MultiPolygon')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'Polygon', 'geomList':unaryFilter}
+                #self.modelDis['discGeomClip'] = unary_union(discGeomList)
+
+            #working for lines and multilinestring
+            elif spatialRow.geometry.geom_type == 'LineString':
+                lineGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(lineGeom,'LineString','MultiLineString')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'LineString', 'geomList':unaryFilter}
+
+            elif spatialRow.geometry.geom_type == 'MultiLineString':
+                multiLineGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(multiLineGeom,'LineString','MultiLineString')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'LineString', 'geomList':unaryFilter}
+
+            #working for points and multipoings
+            elif spatialRow.geometry.geom_type == 'Point':
+                pointGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(pointGeom,'Point','MultiPoint')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'Point', 'geomList':unaryFilter}
+
+            elif spatialRow.geometry.geom_type == 'MultiPoint':
+                pointGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(pointGeom,'Point','MultiPoint')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'Point', 'geomList':unaryFilter}
+
+            else:
+                print('You are working with a uncompatible geometry. Remember to use single parts')
+                print('Check this file: %s \n'%shapePath)
+                sys.exit()
 
     def orgVertexAsList(self, geomDict):
         #get only the original vertices inside the model limit
@@ -133,7 +160,7 @@ class createVoronoi():
     def distributedVertexAsList(self, geomDict):
         #distribute vertices along the layer paths
         vertexList = []
-        minRef = self.modelDis['refSizeList'].min()
+        minRef = self.modelDis['minRef']
         if geomDict['type']=='Polygon':
             for poly in geomDict['geomList']:
                 polyLength = poly.exterior.length
@@ -160,7 +187,7 @@ class createVoronoi():
         start = time.time()
         vertexOrgPairList = []
         vertexDistPairList = []
-        for key, dictGeom in self.discArrays.items():
+        for key, dictGeom in self.discGeoms.items():
             vertexOrgPairList += self.orgVertexAsList(dictGeom)
             vertexDistPairList += self.distributedVertexAsList(dictGeom)
         self.modelDis['vertexOrg'] = vertexOrgPairList
@@ -168,11 +195,13 @@ class createVoronoi():
 
         self.modelDis['vertexBuffer'] = []
         if txtFile != '':
-            np.savetxt(txtFile,self.modelDis['vertexOrg'])
+            np.savetxt(txtFile+'_org',self.modelDis['vertexOrg'])
+            np.savetxt(txtFile+'_dist',self.modelDis['vertexOrg'])
 
-    def generateCirclesAroundRef(self,indexRef,refSize):
+    def circlesAroundRefPoints(self,indexRef,refSize):
+        #first we create buffers around points and merge them
         circleList = []
-        pointCircleList = []
+        polyPointList = []
         for point in self.modelDis['vertexDist']:
             circle = Point(point).buffer(refSize)
             circleList.append(circle)
@@ -182,6 +211,7 @@ class createVoronoi():
             circleMulti = circleUnion
         elif circleUnion.geom_type == 'Polygon':
             circleMulti = MultiPolygon([circleUnion])
+        # from the multipolygons 
         for poly in circleMulti.geoms:
             outerLength = poly.exterior.length
             if indexRef%2 == 0:
@@ -195,32 +225,50 @@ class createVoronoi():
 
     def generateAllCircles(self):
         for index, ref in enumerate(self.modelDis['refSizeList']):
-            circleUnion, polyPointList = self.generateCirclesAroundRef(index,ref)
+            circleUnion, polyPointList = self.circlesAroundRefPoints(index,ref)
             refBuffer = gpd.GeoSeries(circleUnion)
             self.modelDis['vertexBuffer'] += polyPointList
+            #here we use the maximum progressive refinement
             if ref == self.modelDis['refSizeList'].max():
                 self.modelDis['circleUnion'] = circleUnion
 
     def getPointsMinMaxRef(self):
 
         #define refs
-        maxRef = self.modelDis['refSizeList'].max()
-        minRef = self.modelDis['refSizeList'].min()
+        maxRef = self.modelDis['maxRef']
+        minRef = self.modelDis['minRef']
 
         #define objects to store the uniform vertex
         self.modelDis['vertexMaxRef'] =[]
         self.modelDis['vertexMinRef'] =[]
 
-        #for max ref points
+        #get the limit geometry where no coarse grid will be generated
         outerPoly = self.modelDis['limitGeometry']
+        limitPoly = copy.copy(outerPoly)
         innerPolys = self.modelDis['circleUnion']
+
+        #working with circle unions
         for poly in innerPolys.geoms:
-            initialPoly = copy.copy(outerPoly)
             transPoly = outerPoly.difference(poly)
-            if initialPoly.area == transPoly.area:
+            if limitPoly.area == transPoly.area:
                 outerPoly.geom.interior += poly
-            elif initialPoly.area > transPoly.area:
+            elif limitPoly.area > transPoly.area:
                 outerPoly = outerPoly.difference(poly)
+
+        #working with mesh disc polys
+        for key, value in self.discGeoms.items():
+            if value['type'] == 'Polygon':
+                for poly in value['geomList']:
+                    transPoly = outerPoly.difference(poly)
+                    if limitPoly.area == transPoly.area:
+                        outerPoly.geom.interior += poly
+                    elif limitPoly.area > transPoly.area:
+                        outerPoly = outerPoly.difference(poly)
+                                 
+        #exporting final clipped polygon geometry                         
+        self.modelDis['pointsMaxRefPoly']=outerPoly
+
+        #creating points of coarse grid
         maxRefXList = np.arange(self.modelDis['xMin']+minRef,self.modelDis['xMax'],maxRef)
         maxRefYList = np.arange(self.modelDis['yMin']+minRef,self.modelDis['yMax'],maxRef)
 
@@ -233,8 +281,8 @@ class createVoronoi():
         self.modelDis['pointsMaxRefPoly']=outerPoly
 
         #for min ref points
-        for polyDict in self.discArrays:
-            tempDict = self.discArrays[polyDict]
+        for polyDict in self.discGeoms:
+            tempDict = self.discGeoms[polyDict]
             if tempDict['type']=='Polygon':
                 for poly in tempDict['geomList']:
                     bounds = poly.exterior.bounds
@@ -294,14 +342,10 @@ class createVoronoi():
             #for intersected polygons
             else:
                 regionDiff = region.intersection(self.modelDis['limitGeometry'])
-                print(regionDiff.geom_type)
                 #check for clipped region as multipolygon
                 if regionDiff.geom_type == 'Polygon':
                     clippedRegions.append(regionDiff)
                 elif regionDiff.geom_type == 'MultiPolygon':
-                    print(regionDiff.geoms)
-                    print([x for x in regionDiff.geoms])
-                    print(list(regionDiff.geoms))
                     clippedRegions.extend(list(regionDiff.geoms))
                 else: print('Something went wrong')
                     

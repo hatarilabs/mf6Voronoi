@@ -1,0 +1,82 @@
+<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+<qgis version="3.34.13-Prizren">
+  <identifier>Faults</identifier>
+  <parentidentifier></parentidentifier>
+  <language>ENG</language>
+  <type>dataset</type>
+  <title>Faults for the Geologic Map of the Stibnite Quadrangle, Valley County Idaho, Idaho Geological Survey Geologic Map 51 (GM-51), 2016</title>
+  <abstract>Geologic faults. Includes all faults; both dangler faults and contact -faults. Use the “FaultMovement” field to classify fault type or to link to the Glossary. This Feature Class is not part of the NCGMP09 standard.
+
+Geologic faults. Includes all faults; both dangler faults and contact -faults. Use the “FaultMovement” field to classify fault type or to link to the Glossary. This Feature Class is not part of the NCGMP09 standard.</abstract>
+  <keywords vocabulary="Search keys">
+    <keyword>Geoscientific Information</keyword>
+    <keyword>Stibnite Idaho</keyword>
+    <keyword>Stibnite mine</keyword>
+    <keyword>Valley County Idaho geologic map</keyword>
+    <keyword>Idaho</keyword>
+    <keyword>geologic map GIS</keyword>
+  </keywords>
+  <keywords vocabulary="gmd:topicCategory">
+    <keyword>Salmon Idaho</keyword>
+    <keyword>Lemhi Valley</keyword>
+    <keyword>Idaho</keyword>
+    <keyword>Geoscientific Information</keyword>
+    <keyword>Beaverhead Mountains</keyword>
+    <keyword>Lemhi County Idaho geologic map</keyword>
+  </keywords>
+  <contact>
+    <contactAddress>
+      <type>postal</type>
+      <address>875 Perimeter Dr. MS 3014</address>
+      <city>Moscow</city>
+      <administrativearea>ID</administrativearea>
+      <postalcode>83844-3014</postalcode>
+      <country>US</country>
+    </contactAddress>
+    <name></name>
+    <organization>Idaho Geological Survey</organization>
+    <position></position>
+    <voice>208-885-7991</voice>
+    <fax></fax>
+    <email></email>
+    <role></role>
+  </contact>
+  <links/>
+  <dates>
+    <date value="2016-12-31T00:00:00" type="Published"/>
+  </dates>
+  <fees></fees>
+  <constraints type="Limitations of use">Geologic map data intended for non-site-specific use. These data were compiled from 1:24,000 scale geologic mapping and should not be used at larger scales, e.g., 1:12,000 scale. Use the DataSources table and the DataSourceID in each Feature Class to determine original intended scale. The Idaho Geological Survey does not guarantee this map or digital data to be free of errors nor assume liability for interpretations made from this map or digital data, or decisions based thereon.</constraints>
+  <rights>Science data credit: David E. Stewart, Eric D. Stewart, Reed S. Lewis, Kerrie N. Weppner, and Vincent H. Isakson. &#xd;
+&#xd;
+GIS credit: Loudon R. Stanford, William R. Schuster, and Jane S. Freed.</rights>
+  <encoding></encoding>
+  <crs>
+    <spatialrefsys nativeFormat="Wkt">
+      <wkt>PROJCRS["NAD27 / Idaho West",BASEGEOGCRS["NAD27",DATUM["North American Datum 1927",ELLIPSOID["Clarke 1866",6378206.4,294.978698213898,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,ANGLEUNIT["degree",0.0174532925199433]],ID["EPSG",4267]],CONVERSION["Idaho CS27 West zone",METHOD["Transverse Mercator",ID["EPSG",9807]],PARAMETER["Latitude of natural origin",41.6666666666667,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8801]],PARAMETER["Longitude of natural origin",-115.75,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8802]],PARAMETER["Scale factor at natural origin",0.999933333,SCALEUNIT["unity",1],ID["EPSG",8805]],PARAMETER["False easting",500000,LENGTHUNIT["US survey foot",0.304800609601219],ID["EPSG",8806]],PARAMETER["False northing",0,LENGTHUNIT["US survey foot",0.304800609601219],ID["EPSG",8807]]],CS[Cartesian,2],AXIS["easting (X)",east,ORDER[1],LENGTHUNIT["US survey foot",0.304800609601219]],AXIS["northing (Y)",north,ORDER[2],LENGTHUNIT["US survey foot",0.304800609601219]],USAGE[SCOPE["Engineering survey, topographic mapping."],AREA["United States (USA) - Idaho - counties of Ada; Adams; Benewah; Boise; Bonner; Boundary; Canyon; Clearwater; Elmore; Gem; Idaho; Kootenai; Latah; Lewis; Nez Perce; Owyhee; Payette; Shoshone; Valley; Washington."],BBOX[41.99,-117.24,49.01,-114.32]],ID["EPSG",26770]]</wkt>
+      <proj4>+proj=tmerc +lat_0=41.6666666666667 +lon_0=-115.75 +k=0.999933333 +x_0=152400.30480061 +y_0=0 +datum=NAD27 +units=us-ft +no_defs</proj4>
+      <srsid>2188</srsid>
+      <srid>26770</srid>
+      <authid>EPSG:26770</authid>
+      <description>NAD27 / Idaho West</description>
+      <projectionacronym>tmerc</projectionacronym>
+      <ellipsoidacronym>EPSG:7008</ellipsoidacronym>
+      <geographicflag>false</geographicflag>
+    </spatialrefsys>
+  </crs>
+  <extent>
+    <spatial dimensions="2" miny="44.876852999999997" maxx="-115.25153000000000247" maxz="0" crs="EPSG:26770" maxy="44.99974000000000274" minx="-115.37518300000000693" minz="0"/>
+    <temporal>
+      <period>
+        <start>2016-12-31T05:00:00Z</start>
+        <end></end>
+      </period>
+    </temporal>
+    <temporal>
+      <period>
+        <start></start>
+        <end></end>
+      </period>
+    </temporal>
+  </extent>
+</qgis>

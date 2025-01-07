@@ -2,20 +2,21 @@ import os, io, fiona, folium
 import geopandas as gpd
 from scipy.spatial import Voronoi
 import numpy as np
+import matplotlib.pyplot as plt
+from shapely.geometry import Point
+#from .utils import add_to_map
+#from mf6.z3graphicsapp.utils import heads_to_map
 
-from .utils import add_to_map
-from mf6.z3graphicsapp.utils import heads_to_map
+# from .models import (LimitLayer,
+#     RefinementLayerNumber,
+#     RefinementLayer,
+#     VoronoiMesh,
+#     Cell2d,
+#     VerticalLayerSetup,
+#     VerticalLayerByRaster,
+#     ModelArray)
 
-from .models import (LimitLayer,
-    RefinementLayerNumber,
-    RefinementLayer,
-    VoronoiMesh,
-    Cell2d,
-    VerticalLayerSetup,
-    VerticalLayerByRaster,
-    ModelArray)
-
-from colour import Color
+# from colour import Color
 
 def read_shp_from_zip(file):
     zipshp = io.BytesIO(open(file, 'rb').read())
@@ -24,6 +25,65 @@ def read_shp_from_zip(file):
         gdf = gpd.GeoDataFrame.from_features(src, crs=crs)
     return gdf
 
+def plotOrgDistPoints(vorMesh):
+  limitXY = vorMesh.modelDis['limitGeometry']
+  limitDf = gpd.GeoDataFrame([{'geometry':limitXY}])
+
+  orgPoints = np.array(vorMesh.modelDis['vertexOrg'])
+  distPoints = np.array(vorMesh.modelDis['vertexDist'])
+
+  fig, ax = plt.subplots(figsize=(12,8))
+  ax.scatter(orgPoints[:,0], orgPoints[:,1], 
+             label='Original', alpha=0.5, ec='crimson', fc='none')
+  ax.scatter(distPoints[:,0], distPoints[:,1], s=5, marker='^',
+             label='Distributed', alpha=0.5, ec='slateblue')
+  limitDf.plot(ax=ax, label='Limit', alpha=0.5, ec='teal', fc='none', ls='-')
+  for key, layer in vorMesh.discGeoms.items():
+     layerDf = gpd.GeoDataFrame(geometry=layer['geomList'])
+     layerDf.plot(ax=ax, alpha=0.5, label=key)
+
+  ax.legend(loc='upper left')
+
+  plt.show()
+
+def plotCirclesPoints(vorMesh):
+  #limitXY = vorMesh.modelDis['limitGeometry']
+  circleUnionDf = gpd.GeoDataFrame([{'geometry':vorMesh.modelDis['circleUnion']}])
+  polyPointList = vorMesh.modelDis['vertexBuffer']
+  orgPoints = np.array(vorMesh.modelDis['vertexOrg'])
+  distPoints = np.array(vorMesh.modelDis['vertexDist'])
+  polyPoints = np.array(polyPointList)
+
+  fig, ax = plt.subplots(figsize=(36,24))
+  ax.scatter(orgPoints[:,0], orgPoints[:,1], 
+             label='Original', alpha=0.5, ec='crimson', fc='none')
+  ax.scatter(distPoints[:,0], distPoints[:,1], s=5, marker='^',
+             label='Distributed', alpha=0.5, ec='slateblue')
+  ax.scatter(polyPoints[:,0], polyPoints[:,1], s=5, marker='^',
+            label='CirclePoints', alpha=0.5, ec='tan')
+  circleUnionDf.plot(ax=ax, label='Limit', alpha=0.5, ec='teal', fc='none', ls='-')
+  #polyPointDf.plot(ax=ax, label='Limit', alpha=0.5, ec='tan', fc='none', ls='-')
+  for key, layer in vorMesh.discGeoms.items():
+     layerDf = gpd.GeoDataFrame(geometry=layer['geomList'])
+     layerDf.plot(ax=ax, alpha=0.5, label=key)
+
+  ax.legend(loc='upper left')
+
+  plt.show()
+
+def plotKeyList(vorMesh, keyList):
+  fig, ax = plt.subplots(figsize=(36,24))
+  for key in keyList:
+    keyDf = gpd.GeoDataFrame([{'geometry':vorMesh.modelDis[key]}])
+    keyDf.plot(ax=ax, label=key, alpha=0.5, ec='teal', fc='none', ls='-')
+  
+  ax.legend(loc='upper left')
+
+  plt.show()
+   
+  
+  
+   
 def bcGraph(self, ref_obj, ref_type, *args, **kwargs):
     project=self.getProject(self.request)
 
