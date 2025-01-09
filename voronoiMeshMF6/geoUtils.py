@@ -18,6 +18,9 @@ from shapely.geometry import Point
 
 # from colour import Color
 
+# Select a colormap
+cmap = plt.cm.viridis
+
 def read_shp_from_zip(file):
     zipshp = io.BytesIO(open(file, 'rb').read())
     with fiona.BytesCollection(zipshp.read()) as src:
@@ -30,18 +33,23 @@ def plotOrgDistPoints(vorMesh):
   limitDf = gpd.GeoDataFrame([{'geometry':limitXY}])
 
   orgPoints = np.array(vorMesh.modelDis['vertexOrg'])
-  distPoints = np.array(vorMesh.modelDis['vertexDist'])
 
-  fig, ax = plt.subplots(figsize=(12,8))
+  tempDistPoints = []
+  for value in vorMesh.modelDis['vertexDist'].values()  :
+     tempDistPoints += value
+  distPoints = np.array(tempDistPoints)
+  #print(distPoints)
+
+  fig, ax = plt.subplots(figsize=(36,24))
   ax.scatter(orgPoints[:,0], orgPoints[:,1], 
              label='Original', alpha=0.5, ec='crimson', fc='none')
-  ax.scatter(distPoints[:,0], distPoints[:,1], s=5, marker='^',
+  ax.scatter(distPoints[:,0], distPoints[:,1], s=2, marker='^',
              label='Distributed', alpha=0.5, ec='slateblue')
   limitDf.plot(ax=ax, label='Limit', alpha=0.5, ec='teal', fc='none', ls='-')
   for key, layer in vorMesh.discGeoms.items():
      layerDf = gpd.GeoDataFrame(geometry=layer['geomList'])
-     layerDf.plot(ax=ax, alpha=0.5, label=key)
-
+     #layerDf.plot(ax=ax, alpha=0.5, label=key.split('_')[0])
+     layerDf.plot(ax=ax, alpha=0.5, label=None)
   ax.legend(loc='upper left')
 
   plt.show()
@@ -51,7 +59,12 @@ def plotCirclesPoints(vorMesh):
   circleUnionDf = gpd.GeoDataFrame([{'geometry':vorMesh.modelDis['circleUnion']}])
   polyPointList = vorMesh.modelDis['vertexBuffer']
   orgPoints = np.array(vorMesh.modelDis['vertexOrg'])
-  distPoints = np.array(vorMesh.modelDis['vertexDist'])
+
+  tempDistPoints = []
+  for value in vorMesh.modelDis['vertexDist'].values():
+     tempDistPoints += value
+  distPoints = np.array(tempDistPoints)
+  #distPoints = np.array(vorMesh.modelDis['vertexDist'])
   polyPoints = np.array(polyPointList)
 
   fig, ax = plt.subplots(figsize=(36,24))
@@ -61,12 +74,12 @@ def plotCirclesPoints(vorMesh):
              label='Distributed', alpha=0.5, ec='slateblue')
   ax.scatter(polyPoints[:,0], polyPoints[:,1], s=5, marker='^',
             label='CirclePoints', alpha=0.5, ec='tan')
-  circleUnionDf.plot(ax=ax, label='Limit', alpha=0.5, ec='teal', fc='none', ls='-')
+  circleUnionDf.plot(ax=ax, label='circleUnion', alpha=0.5, ec='teal', fc='none', ls='-')
   #polyPointDf.plot(ax=ax, label='Limit', alpha=0.5, ec='tan', fc='none', ls='-')
-  for key, layer in vorMesh.discGeoms.items():
-     layerDf = gpd.GeoDataFrame(geometry=layer['geomList'])
-     layerDf.plot(ax=ax, alpha=0.5, label=key)
 
+  for key, layer in vorMesh.discGeoms.items():
+    layerDf = gpd.GeoDataFrame(geometry=layer['geomList'])
+    layerDf.plot(ax=ax, alpha=0.5, label=None)
   ax.legend(loc='upper left')
 
   plt.show()
@@ -80,10 +93,7 @@ def plotKeyList(vorMesh, keyList):
   ax.legend(loc='upper left')
 
   plt.show()
-   
-  
-  
-   
+     
 def bcGraph(self, ref_obj, ref_type, *args, **kwargs):
     project=self.getProject(self.request)
 
