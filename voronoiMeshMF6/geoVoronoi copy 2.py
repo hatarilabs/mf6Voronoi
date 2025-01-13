@@ -15,7 +15,7 @@ from collections import OrderedDict
 
 class createVoronoi():
     def __init__(self):
-        #self.discGeoms = {}
+        self.discGeoms = {}
         self.modelDis = {}
         self.pairArray = None
         self.discLayers = {}
@@ -45,211 +45,294 @@ class createVoronoi():
         self.modelDis['limitShape'] = limitShape
         self.modelDis['limitGeometry'] = limitGeom
         self.modelDis['vertexDist'] = {}
-        self.modelDis['vertexBuffer'] = []
         self.modelDis['crs'] = limitShape.crs
 
     # we shift from minRef to layerRef
     # def defineParameters(self, maxRef=500, minRef=50, multiplier=1):
     def defineParameters(self, maxRef=500, multiplier=1):
+        #Define the refinement sizes
+        # distList = [minRef]
+        # i=1
+        # while distList[-1] <= maxRef:
+        #     #print(distList)
+        #     distValue = distList[-1] + multiplier**i*minRef
+        #     if distValue <= maxRef:
+        #         distList.append(distValue)       
+        #     else:
+        #         break
+        #     i+=1
+
+        # self.modelDis['refSizeList'] = np.array(distList)
         self.modelDis['maxRef'] = maxRef
         self.modelDis['multiplier'] = multiplier
+        #self.modelDis['minRef'] = minRef
+        #self.modelDis['refSizeList'] = [minRef + index*]
+        # print('\n/--------Sumary of cell discretization-------/')
+        # print('Maximun refinement progressive: %.2f m.'%self.modelDis['refSizeList'].max())
+        # print('Maximun refinement coarse areas: %.2f m.'%self.modelDis['maxRef'])
+        # print('Minimum refinement: %.2f m.'%self.modelDis['minRef'])
+        # print('Cell size list: %s m.'%str(self.modelDis['refSizeList']))
+        # print('/--------------------------------------------/\n',flush=True)
 
     #here we add the layerRef to the function
     #def addLayer(self, name, shapePath):
-    def addLayer(self, layerName, shapePath, layerRef):
+    def addLayer(self, name, shapePath, layerRef):
         #Add layers for mesh definition
         #This feature also clips and store the geometry
         #geomList is allways a Python of Shapely geometries
-      
+        
         spatialDf = gpd.read_file(shapePath)   
 
-        #get the ref and geoms as a list
-        self.discLayers[layerName] = {'layerRef':layerRef,
-                                      'layerGeoms':[]}  
+        #get the master layer name
+        self.discLayers[name] = {'layerRef':layerRef}  
         
         #auxiliary funtion to intersect:
-        def intersectLimitLayer(discLayerGeom):
-            discGeomList = []  
+        def intersectGeom(anyGeom, partType, multiPartType):
+            discGeomList = []
             #generic 
-            if self.isMultiGeometry(discLayerGeom):
-                for partGeom in discLayerGeom.geoms:
+            
+            if self.isMultiGeometry(anyGeom):
+                for partGeom in anyGeom.geoms:
                     discGeomClip =  self.modelDis['limitGeometry'].intersection(partGeom)
                     if not discGeomClip.is_empty:
                         discGeomList.append(discGeomClip)
             else:
-                discGeomClip =  self.modelDis['limitGeometry'].intersection(discLayerGeom)
+                discGeomClip =  self.modelDis['limitGeometry'].intersection(anyGeom)
                 if not discGeomClip.is_empty:
                     discGeomList.append(discGeomClip)
 
-            unaryGeom = unary_union(discGeomList)
-            # print('aaa')
-            # print(type(unaryGeom))
-            # print(isinstance(unaryGeom, (MultiLineString)))
-            # print(self.isMultiGeometry(unaryGeom))
-            if self.isMultiGeometry(unaryGeom):
-                # print('bbb')
-                unaryFilter = [geom for geom in unaryGeom.geoms]
-            else:
-                unaryFilter = [unaryGeom]
-
+            unaryPoly = unary_union(discGeomList)
+            if unaryPoly.geom_type == partType:
+                unaryFilter = [unaryPoly]
+            elif unaryPoly.geom_type == multiPartType:
+                unaryFilter = [poly for poly in unaryPoly.geoms]
             return unaryFilter
 
         #looping over the shapefile
         for spatialIndex, spatialRow in spatialDf.iterrows():
-            if spatialRow.geometry.is_valid:
-                geomGeom = spatialRow.geometry
-                unaryFilter = intersectLimitLayer(geomGeom)
-                self.discLayers[layerName]['layerGeoms'] += unaryFilter
+            #working for polygons and multipolygons
+            if spatialRow.geometry.geom_type == 'Polygon':
+                polyGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(polyGeom,'Polygon','MultiPolygon')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'Polygon', 
+                                                              'geomList':unaryFilter
+                                                              'layerName':name}
+                
+            elif spatialRow.geometry.geom_type == 'MultiPolygon':
+                multiPolyGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(multiPolyGeom,'Polygon','MultiPolygon')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'Polygon', 
+                                                              'geomList':unaryFilter
+                                                              'layerName':name}
+                
+            #working for lines and multilines    
+            elif spatialRow.geometry.geom_type == 'LineString':
+                lineGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(lineGeom,'LineString','MultiLineString')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'LineString', 
+                                                              'geomList':unaryFilter,
+                                                              'layerName':name}
+
+            elif spatialRow.geometry.geom_type == 'MultiLineString':
+                multiLineGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(multiLineGeom,'LineString','MultiLineString')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'LineString', 
+                                                              'geomList':unaryFilter
+                                                              'layerName':name}
+
+            #working for points and multipoints
+            elif spatialRow.geometry.geom_type == 'Point':
+                pointGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(pointGeom,'Point','MultiPoint')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'Point', 
+                                                              'geomList':unaryFilter,
+                                                              'layerRef':layerRef,
+                                                              'layerName':name}
+
+            elif spatialRow.geometry.geom_type == 'MultiPoint':
+                pointGeom = spatialRow.geometry
+                unaryFilter = intersectGeom(pointGeom,'Point','MultiPoint')
+                self.discGeoms[name+'_'+str(spatialIndex)] = {'type':'Point', 
+                                                              'geomList':unaryFilter,
+                                                              'layerRef':layerRef,
+                                                              'layerName':name}
             else:
                 print('You are working with a uncompatible geometry. Remember to use single parts')
                 print('Check this file: %s \n'%shapePath)
                 sys.exit()
-            
-    def orgVertexAsList(self, layerGeoms):
+
+    def orgVertexAsList(self, geomDict):
         #get only the original vertices inside the model limit
         vertexList = []
-
-        for layerGeom in layerGeoms:
-            if layerGeom.geom_type == 'Polygon':
-                pointObject = layerGeom.exterior.coords.xy
+        if geomDict['type']=='Polygon':
+            for poly in geomDict['geomList']:
+                pointObject = poly.exterior.coords.xy
                 pointList = list(zip(pointObject[0],pointObject[1]))
                 for index, point in enumerate(pointList):
                     vertexList.append(point)
-            elif layerGeom.geom_type == 'LineString':
-                pointObject = layerGeom.coords.xy
+        elif geomDict['type']=='LineString':
+            for line in geomDict['geomList']:
+                pointObject = line.coords.xy
                 pointList = list(zip(pointObject[0],pointObject[1]))
                 for index, point in enumerate(pointList):
                     vertexList.append(point)
-            elif layerGeom.geom_type == 'Point':
-                pointObject = layerGeom.coords.xy
+        elif geomDict['type']=='Point':
+            for point in geomDict['geomList']:
+                pointObject = point.coords.xy
                 vertexList.append((pointObject[0][0],pointObject[1][0]))
-            else:
-                print(layerGeom)
-                print('/-----Problem has been bound when extracting org vertex-----/')
-
+        else:
+            pass
         return vertexList
 
-    def distributedVertexAsList(self, layerGeoms, layerRef):
+    def distributedVertexAsList(self, geomDict):
         #distribute vertices along the layer paths
         vertexList = []
-
-        for layerGeom in layerGeoms:
-            if layerGeom.geom_type == 'Polygon':
-                polyLength = layerGeom.exterior.length
+        layerRef = geomDict['layerRef']
+        if geomDict['type']=='Polygon':
+            for poly in geomDict['geomList']:
+                polyLength = poly.exterior.length
                 pointProg = np.arange(0,polyLength,layerRef)
                 for prog in pointProg:
-                    pointXY = list(layerGeom.exterior.interpolate(prog).xy)
+                    pointXY = list(poly.exterior.interpolate(prog).xy)
                     vertexList.append([pointXY[0][0],pointXY[1][0]])
-            elif layerGeom.geom_type == 'LineString':
-                lineLength = layerGeom.length
+        elif geomDict['type']=='LineString':
+            for line in geomDict['geomList']:
+                lineLength = line.length
                 pointProg = np.arange(0,lineLength,layerRef)
                 for prog in pointProg:
-                    pointXY = list(layerGeom.interpolate(prog).xy)
+                    pointXY = list(line.interpolate(prog).xy)
                     vertexList.append([pointXY[0][0],pointXY[1][0]])
-            elif layerGeom.geom_type == 'Point':
-                pointObject = layerGeom.coords.xy
+        elif geomDict['type']=='Point':
+            for point in geomDict['geomList']:
+                pointObject = point.coords.xy
                 vertexList.append((pointObject[0][0],pointObject[1][0]))
-            else:
-                print('/-----Problem has been bound when extracting dist vertex-----/')
-
+        else:
+            pass
         return vertexList
 
-    def generateOrgDistVertices(self, txtFile=''):
+    def extractOrgVertices(self, txtFile='', probIndex=0.01):
         start = time.time()
         vertexOrgPairList = []
         #vertexDistPairList = []
-        for layer, values in self.discLayers.items():
-            vertexOrgPairList += self.orgVertexAsList(values['layerGeoms'])
-            layerGeoms = values['layerGeoms']
-            layerRef = values['layerRef']
-            self.modelDis['vertexDist'][layer] = self.distributedVertexAsList(layerGeoms, layerRef)
+        for key, dictGeom in self.discGeoms.items():
+            vertexOrgPairList += self.orgVertexAsList(dictGeom)
+            #vertexDistPairList += self.distributedVertexAsList(dictGeom)
+            self.modelDis['vertexDist'][key] = self.distributedVertexAsList(dictGeom)
         self.modelDis['vertexOrg'] = vertexOrgPairList
 
+        self.modelDis['vertexBuffer'] = []
         if txtFile != '':
             np.savetxt(txtFile+'_org',self.modelDis['vertexOrg'])
             np.savetxt(txtFile+'_dist',self.modelDis['vertexOrg'])
 
-    def circlesAroundRefPoints(self,layer,indexRef,cellSize):
+    def circlesAroundRefPoints(self,key,indexRef,refSize):
         #first we create buffers around points and merge them
         circleList = []
         polyPointList = []
-        for point in self.modelDis['vertexDist'][layer]:
-            circle = Point(point).buffer(cellSize)
+        for point in self.modelDis['vertexDist'][key]:
+            circle = Point(point).buffer(refSize)
             circleList.append(circle)
-        circleUnions = unary_union(circleList)
-        
-        def getPolygonAndInteriors(polyGeom):
-            exteriorInteriorPolys = [polyGeom] + [Polygon(ring) for ring in polyGeom.interiors]
-            return exteriorInteriorPolys
-         
-        circleUnionExtIntList = []
-        if circleUnions.geom_type == 'MultiPolygon':
-            for circleUnion in circleUnions.geoms:
-                circleUnionExtIntList += getPolygonAndInteriors(circleUnion)
-        elif circleUnions.geom_type == 'Polygon':
-            circleUnionExtIntList += getPolygonAndInteriors(circleUnions)
-
-        # from the multipolygons 
+        circleUnion = unary_union(circleList)
         polyPointList = []
-        for circleUnionExtInt in circleUnionExtIntList:
-            outerLength = circleUnionExtInt.exterior.length
+        if circleUnion.geom_type == 'MultiPolygon':
+            circleMulti = circleUnion
+        elif circleUnion.geom_type == 'Polygon':
+            circleMulti = MultiPolygon([circleUnion])
+        # from the multipolygons 
+        for poly in circleMulti.geoms:
+            outerLength = poly.exterior.length
             if indexRef%2 == 0:
-                pointProg = np.arange(0,outerLength,np.pi*cellSize/3)
+                pointProg = np.arange(0,outerLength,np.pi*refSize/3)
             else:
-                pointProg = np.arange(np.pi*cellSize/6,outerLength+np.pi*cellSize/6,np.pi*cellSize/3)
+                pointProg = np.arange(np.pi*refSize/6,outerLength+np.pi*refSize/6,np.pi*refSize/3)
             for prog in pointProg:
-                pointXY = list(circleUnionExtInt.exterior.interpolate(prog).xy)
+                pointXY = list(poly.exterior.interpolate(prog).xy)
                 polyPointList.append([pointXY[0][0],pointXY[1][0]])
-
-        circleUnionExtIntMpoly = MultiPolygon(circleUnionExtIntList)
-        return circleUnionExtIntMpoly, polyPointList
+        return circleMulti, polyPointList
 
     def generateAllCircles(self):
         partialCircleUnionList = []
 
         label = ''
 
-        for layer, value in self.discLayers.items():
-            cellSizeList = [value['layerRef']]
+        for layer in self.discLayers:
+            distList = [layer['layerRef']]
 
             i=1
-            while cellSizeList[-1] <= self.modelDis['maxRef']:
-                cellSize = cellSizeList[-1] + self.modelDis['multiplier']**i*value['layerRef']
-                if cellSize <= self.modelDis['maxRef']:
-                    cellSizeList.append(cellSize)       
+            while distList[-1] <= self.modelDis['maxRef']:
+                distValue = distList[-1] + self.modelDis['multiplier']**i*value['layerRef']
+                if distValue <= self.modelDis['maxRef']:
+                    distList.append(distValue)       
                 else:
                     break
                 i+=1
 
-            self.discLayers[layer]['layerSpaceListt'] = cellSizeList
+            self.discLayers[layer]['distList'] = distList
 
             print('\n/--------Layer %s discretization-------/'%layer)
-            print('Progressive cell size list: %s m.'%str(cellSizeList))
+            print('Cell size list: %s m.'%str(distList))
+            
+            #filter discGeom of this layer
+            layerDiscGeoms = [ self.discGeoms[x] for x in self.discGeoms if x['layerName'] == layer]
 
-            for index, cellSize in enumerate(cellSizeList):
-                circleUnion, polyPointList = self.circlesAroundRefPoints(layer,index,cellSize)
+            for layerDiscGeom in layerDiscGeoms:
+
+        for key, value in self.discGeoms.items():
+            distList = [value['layerRef']]
+
+            i=1
+            while distList[-1] <= self.modelDis['maxRef']:
+                #print(distList)
+                distValue = distList[-1] + self.modelDis['multiplier']**i*value['layerRef']
+                if distValue <= self.modelDis['maxRef']:
+                    distList.append(distValue)       
+                else:
+                    break
+                i+=1
+
+            self.discGeoms[key]['distList'] = distList
+
+            if label != key.split('_')[0]:
+                label = key.split('_')[0]
+                print('\n/--------Layer %s discretization-------/'%label)
+                print('Cell size list: %s m.'%str(distList))
+                #print('/--------------------------------------------/\n',flush=True)        
+
+            #partialCircleUnionList = []
+            for index, ref in enumerate(distList):
+                #print(key,index,ref)
+                circleUnion, polyPointList = self.circlesAroundRefPoints(key,index,ref)
                 refBuffer = gpd.GeoSeries(circleUnion)
                 self.modelDis['vertexBuffer'] += polyPointList
                 #here we use the maximum progressive refinement
                 #if ref == self.modelDis['refSizeList'].max():
-                if cellSize == np.array(cellSizeList).max():
+                if ref == np.array(distList).max():
                     #self.modelDis['circleUnion'] = circleUnion
                     partialCircleUnionList.append(circleUnion)
 
         totalCircleUnion = unary_union(partialCircleUnionList)
         self.modelDis['circleUnion'] = totalCircleUnion
 
+
+        # for index, ref in enumerate(self.modelDis['refSizeList']):
+        #     circleUnion, polyPointList = self.circlesAroundRefPoints(index,ref)
+        #     refBuffer = gpd.GeoSeries(circleUnion)
+        #     self.modelDis['vertexBuffer'] += polyPointList
+        #     #here we use the maximum progressive refinement
+        #     if ref == self.modelDis['refSizeList'].max():
+        #         self.modelDis['circleUnion'] = circleUnion
+
     def getPointsMinMaxRef(self):
 
         #define refs
         maxRef = self.modelDis['maxRef']
 
-        layerRefList = []
-        for key, value in self.discLayers.items():
-            layerRefList.append(value['layerRef'])
+        refList = []
+        for key, value in self.discGeoms.items():
+            refList += value['distList']
 
         #minRef = self.modelDis['minRef']
-        minRef = np.array(layerRefList).min()
+        minRef = np.array(refList).min()
 
         #define objects to store the uniform vertex
         self.modelDis['vertexMaxRef'] =[]
@@ -277,22 +360,14 @@ class createVoronoi():
                 outerPoly = outerPoly.difference(transPoly)
 
         #working with mesh disc polys
-        for key, value in self.discLayers.items():
-            for layerGeom in value['layerGeoms']:
-                if layerGeom.geom_type == 'Polygon':
-                    transPoly = outerPoly.difference(layerGeom)
+        for key, value in self.discGeoms.items():
+            if value['type'] == 'Polygon':
+                for poly in value['geomList']:
+                    transPoly = outerPoly.difference(poly)
                     if limitPoly.area == transPoly.area:
-                        outerPoly.geom.interior += layerGeom
+                        outerPoly.geom.interior += poly
                     elif limitPoly.area > transPoly.area:
-                        outerPoly = outerPoly.difference(layerGeom)
-
-            # if value['type'] == 'Polygon':
-            #     for poly in value['geomList']:
-            #         transPoly = outerPoly.difference(poly)
-            #         if limitPoly.area == transPoly.area:
-            #             outerPoly.geom.interior += poly
-            #         elif limitPoly.area > transPoly.area:
-            #             outerPoly = outerPoly.difference(poly)
+                        outerPoly = outerPoly.difference(poly)
                                  
         #exporting final clipped polygon geometry                         
         self.modelDis['pointsMaxRefPoly']=outerPoly
@@ -310,31 +385,19 @@ class createVoronoi():
         self.modelDis['pointsMaxRefPoly']=outerPoly
 
         #for min ref points
-        for key, value in self.discLayers.items():
-            for layerGeom in value['layerGeoms']:
-                if layerGeom.geom_type == 'Polygon':
-                    bounds = layerGeom.exterior.bounds
-                    minRefXList = np.arange(bounds[0]+value['layerRef'],bounds[2],value['layerRef'])
-                    minRefYList = np.arange(bounds[1]+value['layerRef'],bounds[3],value['layerRef'])
+        for polyKey in self.discGeoms:
+            polyDict = self.discGeoms[polyKey]
+            if polyDict['type']=='Polygon':
+                for poly in polyDict['geomList']:
+                    bounds = poly.exterior.bounds
+                    minRefXList = np.arange(bounds[0]+polyDict['layerRef'],bounds[2],polyDict['layerRef'])
+                    minRefYList = np.arange(bounds[1]+polyDict['layerRef'],bounds[3],polyDict['layerRef'])
 
                     for xCoord in minRefXList:
                         for yCoord in minRefYList:
                             refPoint = Point(xCoord,yCoord)
-                            if layerGeom.contains(refPoint):
+                            if poly.contains(refPoint):
                                 self.modelDis['vertexMinRef'].append((xCoord,yCoord))
-                
-            # polyDict = self.discGeoms[polyKey]
-            # if polyDict['type']=='Polygon':
-            #     for poly in polyDict['geomList']:
-            #         bounds = poly.exterior.bounds
-            #         minRefXList = np.arange(bounds[0]+polyDict['layerRef'],bounds[2],polyDict['layerRef'])
-            #         minRefYList = np.arange(bounds[1]+polyDict['layerRef'],bounds[3],polyDict['layerRef'])
-
-            #         for xCoord in minRefXList:
-            #             for yCoord in minRefYList:
-            #                 refPoint = Point(xCoord,yCoord)
-            #                 if poly.contains(refPoint):
-            #                     self.modelDis['vertexMinRef'].append((xCoord,yCoord))
 
     def createPointCloud(self):
         start = time.time()

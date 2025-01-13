@@ -46,8 +46,11 @@ def plotOrgDistPoints(vorMesh):
   ax.scatter(distPoints[:,0], distPoints[:,1], s=2, marker='^',
              label='Distributed', alpha=0.5, ec='slateblue')
   limitDf.plot(ax=ax, label='Limit', alpha=0.5, ec='teal', fc='none', ls='-')
-  for key, layer in vorMesh.discGeoms.items():
-     layerDf = gpd.GeoDataFrame(geometry=layer['geomList'])
+  for key, layer in vorMesh.distLayers.items():
+     distLayersList = []
+     for layerGeom in layer['layerGeoms']:
+        distLayersList.append(layerGeom)
+     layerDf = gpd.GeoDataFrame(geometry=distLayerList['geomList'])
      #layerDf.plot(ax=ax, alpha=0.5, label=key.split('_')[0])
      layerDf.plot(ax=ax, alpha=0.5, label=None)
   ax.legend(loc='upper left')
