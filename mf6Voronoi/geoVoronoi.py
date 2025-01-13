@@ -14,9 +14,10 @@ from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineSt
 from collections import OrderedDict
 
 class createVoronoi():
-    def __init__(self, maxRef, multiplier):
+    def __init__(self, meshName, maxRef, multiplier):
         #self.discGeoms = {}
         self.modelDis = {}
+        self.modelDis['meshName'] = meshName
         self.modelDis['maxRef'] = maxRef
         self.modelDis['multiplier'] = multiplier
         self.pairArray = None
@@ -400,32 +401,38 @@ class createVoronoi():
         end = time.time()
         print('\nTime required for voronoi generation: %.2f seconds \n'%(end - start), flush=True)
 
-    def getPolyAsShp(self,circleList,shapePath=''):
+    def getVoronoiAsShp(self, outputPath=''):
         print('\n/----Generation of the voronoi shapefile----/')
         start = time.time()
         schema_props = OrderedDict([("id", "int")])
         schema={"geometry": "Polygon", "properties": schema_props}
-        if shapePath != '':
-            outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
-                                crs = self.modelDis['crs'], schema=schema)
-            for index, poly in enumerate(self.modelDis[circleList].geoms):
-                polyCoordList = []
-                x,y = poly.exterior.coords.xy
-                polyCoordList.append(list(zip(x,y)))
-                if poly.interiors[:] != []:
-                    interiorList = []
-                    for interior in poly.interiors:
-                        polyCoordList.append(interior.coords[:])
-                feature = {
-                    "geometry": {'type':'Polygon',
-                                'coordinates':polyCoordList},
-                    "properties": OrderedDict([("id",index)]),
-                }
-                outFile.write(feature)
-            outFile.close()
+
+        if outputPath == '':
+            shapePath = self.modelDis['meshName'] + '_output'
+        else:
+            shapePath = outputPath
+
+        outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
+                            crs = self.modelDis['crs'], schema=schema)
+        
+        for index, poly in enumerate(self.modelDis['voronoiRegions'].geoms):
+            polyCoordList = []
+            x,y = poly.exterior.coords.xy
+            polyCoordList.append(list(zip(x,y)))
+            if poly.interiors[:] != []:
+                interiorList = []
+                for interior in poly.interiors:
+                    polyCoordList.append(interior.coords[:])
+            feature = {
+                "geometry": {'type':'Polygon',
+                            'coordinates':polyCoordList},
+                "properties": OrderedDict([("id",index)]),
+            }
+            outFile.write(feature)
+        outFile.close()
+
         end = time.time()
         print('\nTime required for voronoi shapefile: %.2f seconds \n'%(end - start), flush=True)
-
 
     def getPointsAsShp(self,pointList,shapePath=''):
         schema_props = OrderedDict([("id", "int")])
