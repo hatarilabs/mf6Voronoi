@@ -14,9 +14,11 @@ from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineSt
 from collections import OrderedDict
 
 class createVoronoi():
-    def __init__(self):
+    def __init__(self, maxRef, multiplier):
         #self.discGeoms = {}
         self.modelDis = {}
+        self.modelDis['maxRef'] = maxRef
+        self.modelDis['multiplier'] = multiplier
         self.pairArray = None
         self.discLayers = {}
 
