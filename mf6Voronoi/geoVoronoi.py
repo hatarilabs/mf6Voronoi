@@ -1,5 +1,5 @@
 import numpy as np
-import copy, sys
+import copy, sys, os
 import tqdm, time
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -51,19 +51,11 @@ class createVoronoi():
         self.modelDis['vertexBuffer'] = []
         self.modelDis['crs'] = limitShape.crs
 
-    # we shift from minRef to layerRef
-    # def defineParameters(self, maxRef=500, minRef=50, multiplier=1):
-    def defineParameters(self, maxRef=500, multiplier=1):
-        self.modelDis['maxRef'] = maxRef
-        self.modelDis['multiplier'] = multiplier
-
     #here we add the layerRef to the function
-    #def addLayer(self, name, shapePath):
     def addLayer(self, layerName, shapePath, layerRef):
         #Add layers for mesh definition
         #This feature also clips and store the geometry
         #geomList is allways a Python of Shapely geometries
-      
         spatialDf = gpd.read_file(shapePath)   
 
         #get the ref and geoms as a list
@@ -85,10 +77,7 @@ class createVoronoi():
                     discGeomList.append(discGeomClip)
 
             unaryGeom = unary_union(discGeomList)
-            # print('aaa')
-            # print(type(unaryGeom))
-            # print(isinstance(unaryGeom, (MultiLineString)))
-            # print(self.isMultiGeometry(unaryGeom))
+
             if self.isMultiGeometry(unaryGeom):
                 # print('bbb')
                 unaryFilter = [geom for geom in unaryGeom.geoms]
@@ -288,14 +277,6 @@ class createVoronoi():
                         outerPoly.geom.interior += layerGeom
                     elif limitPoly.area > transPoly.area:
                         outerPoly = outerPoly.difference(layerGeom)
-
-            # if value['type'] == 'Polygon':
-            #     for poly in value['geomList']:
-            #         transPoly = outerPoly.difference(poly)
-            #         if limitPoly.area == transPoly.area:
-            #             outerPoly.geom.interior += poly
-            #         elif limitPoly.area > transPoly.area:
-            #             outerPoly = outerPoly.difference(poly)
                                  
         #exporting final clipped polygon geometry                         
         self.modelDis['pointsMaxRefPoly']=outerPoly
@@ -307,7 +288,7 @@ class createVoronoi():
         for xCoord in maxRefXList:
             for yCoord in maxRefYList:
                 refPoint = Point(xCoord,yCoord)
-                if not outerPoly.contains(refPoint):
+                if outerPoly.contains(refPoint):
                     self.modelDis['vertexMaxRef'].append((xCoord,yCoord))
 
         self.modelDis['pointsMaxRefPoly']=outerPoly
@@ -325,19 +306,6 @@ class createVoronoi():
                             refPoint = Point(xCoord,yCoord)
                             if layerGeom.contains(refPoint):
                                 self.modelDis['vertexMinRef'].append((xCoord,yCoord))
-                
-            # polyDict = self.discGeoms[polyKey]
-            # if polyDict['type']=='Polygon':
-            #     for poly in polyDict['geomList']:
-            #         bounds = poly.exterior.bounds
-            #         minRefXList = np.arange(bounds[0]+polyDict['layerRef'],bounds[2],polyDict['layerRef'])
-            #         minRefYList = np.arange(bounds[1]+polyDict['layerRef'],bounds[3],polyDict['layerRef'])
-
-            #         for xCoord in minRefXList:
-            #             for yCoord in minRefYList:
-            #                 refPoint = Point(xCoord,yCoord)
-            #                 if poly.contains(refPoint):
-            #                     self.modelDis['vertexMinRef'].append((xCoord,yCoord))
 
     def createPointCloud(self):
         start = time.time()
@@ -401,16 +369,20 @@ class createVoronoi():
         end = time.time()
         print('\nTime required for voronoi generation: %.2f seconds \n'%(end - start), flush=True)
 
-    def getVoronoiAsShp(self, outputPath=''):
+    def getVoronoiAsShp(self, outputPath='output'):
         print('\n/----Generation of the voronoi shapefile----/')
         start = time.time()
         schema_props = OrderedDict([("id", "int")])
         schema={"geometry": "Polygon", "properties": schema_props}
 
-        if outputPath == '':
-            shapePath = self.modelDis['meshName'] + '_output'
+        #check or create an output folder
+        if os.path.isdir(outputPath):
+            print('The output folder %s exists'%outputPath)
         else:
-            shapePath = outputPath
+            os.mkdir(outputPath)
+            print('The output folder %s has been generated.'%outputPath)
+
+        shapePath = os.path.join(outputPath, self.modelDis['meshName']+'.shp')
 
         outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
                             crs = self.modelDis['crs'], schema=schema)
@@ -431,6 +403,41 @@ class createVoronoi():
             outFile.write(feature)
         outFile.close()
 
+        end = time.time()
+        print('\nTime required for voronoi shapefile: %.2f seconds \n'%(end - start), flush=True)
+
+    def getPolyAsShp(self,circleList,outputPath='output'):
+        start = time.time()
+        schema_props = OrderedDict([("id", "int")])
+        schema={"geometry": "Polygon", "properties": schema_props}
+
+        #check or create an output folder
+        if os.path.isdir(outputPath):
+            print('The output folder %s exists'%outputPath)
+        else:
+            os.mkdir(outputPath)
+            print('The output folder %s has been generated.'%outputPath)
+
+        shapePath = os.path.join(outputPath, self.modelDis['meshName']+circleList+'.shp')
+        
+        outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
+                            crs = self.modelDis['crs'], schema=schema)
+        for index, poly in enumerate(self.modelDis[circleList].geoms):
+            polyCoordList = []
+            x,y = poly.exterior.coords.xy
+            polyCoordList.append(list(zip(x,y)))
+            if poly.interiors[:] != []:
+                interiorList = []
+                for interior in poly.interiors:
+                    polyCoordList.append(interior.coords[:])
+            feature = {
+                "geometry": {'type':'Polygon',
+                            'coordinates':polyCoordList},
+                "properties": OrderedDict([("id",index)]),
+            }
+            outFile.write(feature)
+        outFile.close()
+        
         end = time.time()
         print('\nTime required for voronoi shapefile: %.2f seconds \n'%(end - start), flush=True)
 

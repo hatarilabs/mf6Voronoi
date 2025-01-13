@@ -1,7 +1,7 @@
 from mf6Voronoi.geoVoronoi import createVoronoi
 
 #Create mesh object specifying the coarse mesh and the multiplier
-vorMesh = createVoronoi(meshName='stibniteMine',maxRef = 500, multiplier=1.5)
+vorMesh = createVoronoi(meshName='regionalModel',maxRef = 200, multiplier=1.5)
 
 #Open limit layers and refinement definition layers
 vorMesh.addLimit('basin','../../examples/regionalModel/shp/Angascancha_Basin_Extension.shp')
