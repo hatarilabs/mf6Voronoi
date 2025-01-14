@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mf6Voronoi"
-version = "0.0.1"
+version = "0.0.2"
 description = "Voronoi mesh generator for MODFLOW6 Disv models"
 authors = [
     {name = "Saul Montoya", email = "saulmontoya@hatarilabs.com"}

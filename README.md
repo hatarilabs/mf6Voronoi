@@ -1,55 +1,49 @@
-python-package-boilerplate
+mf6Voronoi
 ==========================
+_The friendly way to create awesome Voronoi meshes for MODFLOW6 DISV_
 
-[![Build Status](https://travis-ci.org/mtchavez/python-package-boilerplate.png?branch=master)](https://travis-ci.org/mtchavez/python-package-boilerplate)
-[![Requires.io](https://requires.io/github/mtchavez/python-package-boilerplate/requirements.svg?branch=master)](https://requires.io/github/mtchavez/python-package-boilerplate/requirements?branch=master)
+![Voronoi meshing](examples/figures/voronoiMeshinModflow6Disv.png)
 
-Boilerplate for a Python Package
+## Introduction
+Groundwater modeling with several boundary conditions and complex hydrogeological setups require advance tools for mesh discretizacion that ensures adequate refinement on the zone of interest while preserving a minimal cell account. Type of mesh has to be engineered in a way to preserve computational resources and represent adequately the groundwater flow regime. 
 
 ## Package
+This python package creates a Voronoi mesh for MODFLOW6 with the DISV (discretized by vertices) option. The package work with geospatial files and has options for selective refinement based on the boundary condition.
 
-Basic structure of package is
-
-```
-├── README.md
-├── packagename
-│   ├── __init__.py
-│   ├── packagename.py
-│   └── version.py
-├── pytest.ini
-├── requirements.txt
-├── setup.py
-└── tests
-    ├── __init__.py
-    ├── helpers
-    │   ├── __init__.py
-    │   └── my_helper.py
-    ├── tests_helper.py
-    └── unit
-        ├── __init__.py
-        ├── test_example.py
-        └── test_version.py
-```
+These are the main python package characteristics:
+- Works with geospatial files on ESRI Shapefile format
+- Progressive refinement can be modified with a multiplier
+- Summary of the point cloud generated for the Voronoi meshing
+- Tested on more than 5 groundwater model datasets
+- Output as polygon ESRI Shapefile
+- Few steps and arguments for mesh generation
 
 ## Requirements
+There are few requirements for the package. The most important one is that all the input files has to be in the same system of reference (CRS) and the CRS length unit has to be in meters or feet.
 
-Package requirements are handled using pip. To install them do
+## Example
+
+The package has been designed with a simple and user friendly approach allowing to create awesome meshes on a short amount of steps.
+
 
 ```
-pip install -r requirements.txt
+# Import the mf6Voronoi package
+from mf6Voronoi.geoVoronoi import createVoronoi
+
+# Create mesh object specifying the coarse mesh and the multiplier
+vorMesh = createVoronoi(meshName='regionalModel',maxRef = 200, multiplier=1.5)
+
+# Open limit layers and refinement definition layers
+vorMesh.addLimit('basin','../../examples/regionalModel/shp/Angascancha_Basin_Extension.shp')
+vorMesh.addLayer('river','../../examples/regionalModel/shp/rios.shp',50)
+
+# Generate point pair array
+vorMesh.generateOrgDistVertices()
+
+# Generate the point cloud and voronoi
+vorMesh.createPointCloud()
+vorMesh.generateVoronoi()
+
+# Export generated voronoi mesh
+vorMesh.getVoronoiAsShp(outputPath='output')
 ```
-
-## Tests
-
-Testing is set up using [pytest](http://pytest.org) and coverage is handled
-with the pytest-cov plugin.
-
-Run your tests with ```py.test``` in the root directory.
-
-Coverage is ran by default and is set in the ```pytest.ini``` file.
-To see an html output of coverage open ```htmlcov/index.html``` after running the tests.
-
-## Travis CI
-
-There is a ```.travis.yml``` file that is set up to run your tests for python 2.7
-and python 3.2, should you choose to use it.
