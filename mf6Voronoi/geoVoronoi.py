@@ -253,20 +253,20 @@ class createVoronoi():
         innerPolys = self.modelDis['circleUnion']
 
         #working with circle unions
-
         if self.isMultiGeometry(innerPolys):
             for poly in innerPolys.geoms:
                 transPoly = outerPoly.difference(poly)
                 if limitPoly.area == transPoly.area:
                     outerPoly.geom.interior += poly
                 elif limitPoly.area > transPoly.area:
-                    outerPoly = outerPoly.difference(poly)
+                    outerPoly = transPoly
         else:
             transPoly = outerPoly.difference(innerPolys)
+            self.modelDis['tempPoly']=transPoly
             if limitPoly.area == transPoly.area:
                 outerPoly.geom.interior += transPoly
             elif limitPoly.area > transPoly.area:
-                outerPoly = outerPoly.difference(transPoly)
+                outerPoly = transPoly
 
         #working with mesh disc polys
         for key, value in self.discLayers.items():
