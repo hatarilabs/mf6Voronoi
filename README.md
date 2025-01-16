@@ -2,7 +2,8 @@ mf6Voronoi
 ==========================
 _The friendly way to create awesome Voronoi meshes for MODFLOW6 DISV_
 
-![Voronoi meshing](examples/figures/voronoiMeshinModflow6Disv.png)
+<img src="https://raw.githubusercontent.com/hatarilabs/mf6Voronoi/refs/heads/main/examples/figures/voronoiMeshinModflow6Disv.png" alt="flopy3" style="width:50;height:20">
+
 
 ## Introduction
 Groundwater modeling with several boundary conditions and complex hydrogeological setups require advance tools for mesh discretizacion that ensures adequate refinement on the zone of interest while preserving a minimal cell account. Type of mesh has to be engineered in a way to preserve computational resources and represent adequately the groundwater flow regime. 
