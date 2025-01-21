@@ -6,7 +6,7 @@ _The friendly way to create awesome Voronoi meshes for MODFLOW6 DISV_
 
 
 ## Introduction
-Groundwater modeling with several boundary conditions and complex hydrogeological setups require advance tools for mesh discretizacion that ensures adequate refinement on the zone of interest while preserving a minimal cell account. Type of mesh has to be engineered in a way to preserve computational resources and represent adequately the groundwater flow regime. 
+Groundwater modeling with several boundary conditions and complex hydrogeological setups require advanced tools for mesh discretizacion that ensures adequate refinement in the zone of interest while preserving a minimal cell account. Type of mesh has to be engineered in a way to preserve computational resources and represent adequately the groundwater flow regime. 
 
 ## Package
 This python package creates a Voronoi mesh for MODFLOW6 with the DISV (discretized by vertices) option. The package work with geospatial files and has options for selective refinement based on the boundary condition.
