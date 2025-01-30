@@ -6,3 +6,16 @@ pip uninstall mf6Voronoi
 
 #Install package locally
 pip install -e .
+
+
+### To upload to Pypi
+
+Delete dist folder
+
+Delete *.egg.info
+
+Build a package
+python3 -m build
+
+upload
+twine upload dist/*
