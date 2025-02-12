@@ -12,6 +12,7 @@ from shapely.ops import split, unary_union, cascaded_union, voronoi_diagram
 import geopandas as gpd
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, mapping
 from collections import OrderedDict
+from .utils import filterVertexCloseLimit, getFionaDictPoly, getFionaDictPoint
 
 class createVoronoi():
     def __init__(self, meshName, maxRef, multiplier):
@@ -48,6 +49,7 @@ class createVoronoi():
         self.modelDis['limitShape'] = limitShape
         self.modelDis['limitGeometry'] = limitGeom
         self.modelDis['vertexDist'] = {}
+        self.modelDis['vertexDistGeoms'] = {}
         self.modelDis['vertexBuffer'] = []
         self.modelDis['crs'] = limitShape.crs
 
@@ -79,7 +81,6 @@ class createVoronoi():
             unaryGeom = unary_union(discGeomList)
 
             if self.isMultiGeometry(unaryGeom):
-                # print('bbb')
                 unaryFilter = [geom for geom in unaryGeom.geoms]
             else:
                 unaryFilter = [unaryGeom]
@@ -97,7 +98,7 @@ class createVoronoi():
                 print('Check this file: %s \n'%shapePath)
                 sys.exit()
             
-    def orgVertexAsList(self, layerGeoms):
+    def orgVertexAsList(self, layerGeoms, layerRef):
         #get only the original vertices inside the model limit
         vertexList = []
 
@@ -105,16 +106,25 @@ class createVoronoi():
             if layerGeom.geom_type == 'Polygon':
                 pointObject = layerGeom.exterior.coords.xy
                 pointList = list(zip(pointObject[0],pointObject[1]))
-                for index, point in enumerate(pointList):
-                    vertexList.append(point)
+                filterPointList = filterVertexCloseLimit(layerGeom,layerRef,pointList,self.modelDis)
+                # for index, point in enumerate(filterPointList):
+                #     vertexList.append(point)
+                if filterPointList != None:
+                    vertexList += filterPointList
             elif layerGeom.geom_type == 'LineString':
                 pointObject = layerGeom.coords.xy
                 pointList = list(zip(pointObject[0],pointObject[1]))
-                for index, point in enumerate(pointList):
-                    vertexList.append(point)
+                filterPointList  = filterVertexCloseLimit(layerGeom,layerRef,pointList,self.modelDis)
+                # for index, point in enumerate(filterPointList):
+                #     vertexList.append(point)
+                if filterPointList != None:
+                    vertexList += filterPointList
             elif layerGeom.geom_type == 'Point':
                 pointObject = layerGeom.coords.xy
-                vertexList.append((pointObject[0][0],pointObject[1][0]))
+                point = (pointObject[0][0],pointObject[1][0])
+                pointPoint = Point(point)
+                if pointPoint.buffer(layerRef).within(self.modelDis['limitGeometry']):
+                    vertexList.append((pointObject[0][0],pointObject[1][0]))
             else:
                 print(layerGeom)
                 print('/-----Problem has been bound when extracting org vertex-----/')
@@ -124,37 +134,69 @@ class createVoronoi():
     def distributedVertexAsList(self, layerGeoms, layerRef):
         #distribute vertices along the layer paths
         vertexList = []
+        vertexGeomList = []
 
         for layerGeom in layerGeoms:
             if layerGeom.geom_type == 'Polygon':
                 polyLength = layerGeom.exterior.length
                 pointProg = np.arange(0,polyLength,layerRef)
+                pointList = []
                 for prog in pointProg:
                     pointXY = list(layerGeom.exterior.interpolate(prog).xy)
-                    vertexList.append([pointXY[0][0],pointXY[1][0]])
+                    pointList.append([pointXY[0][0],pointXY[1][0]])
+                filterPointList, filterPointGeom = filterVertexCloseLimit(layerGeom,layerRef,pointList,self.modelDis)
+                if filterPointGeom != None:
+                    vertexList += filterPointList
+                    vertexGeomList.append(filterPointGeom)
             elif layerGeom.geom_type == 'LineString':
                 lineLength = layerGeom.length
                 pointProg = np.arange(0,lineLength,layerRef)
+                pointList = []
                 for prog in pointProg:
                     pointXY = list(layerGeom.interpolate(prog).xy)
-                    vertexList.append([pointXY[0][0],pointXY[1][0]])
+                    pointList.append([pointXY[0][0],pointXY[1][0]])
+                filterPointList, filterPointGeom = filterVertexCloseLimit(layerGeom,layerRef,pointList,self.modelDis)
+                if filterPointGeom != None:
+                    vertexList += filterPointList
+                    vertexGeomList.append(filterPointGeom)
             elif layerGeom.geom_type == 'Point':
                 pointObject = layerGeom.coords.xy
-                vertexList.append((pointObject[0][0],pointObject[1][0]))
+                point = (pointObject[0][0],pointObject[1][0])
+                pointPoint = Point(point)
+                if pointPoint.buffer(layerRef).within(self.modelDis['limitGeometry']):
+                    x,y = pointObject[0][0],pointObject[1][0]
+                    vertexList.append((x,y))
+                    vertexGeomList.append(pointPoint)
             else:
                 print('/-----Problem has been bound when extracting dist vertex-----/')
 
-        return vertexList
+            # # to prevent vertices close to borders
+            # for vertex in vertexList:
+            #     vertexPoint = Point(vertex)
+            #     if vertexPoint.buffer*
+            vertexLine = LineString(vertexList)
+            # if len(vertexList) > 1:
+            #     bufferVertexList = []
+            #     vertexLine = LineString(vertexList)
+            #     vertexProg = np.arange(0,vertexLine.length,layerRef/4)
+            #     for prog in vertexProg:
+            #         pointXY = list(vertexLine.interpolate(prog).xy)
+            #         bufferVertexList.append([pointXY[0][0],pointXY[1][0]])
+            # else:
+            #     bufferVertexList = vertexList
+
+        return vertexList, vertexGeomList
 
     def generateOrgDistVertices(self, txtFile=''):
         start = time.time()
         vertexOrgPairList = []
         #vertexDistPairList = []
         for layer, values in self.discLayers.items():
-            vertexOrgPairList += self.orgVertexAsList(values['layerGeoms'])
             layerGeoms = values['layerGeoms']
             layerRef = values['layerRef']
-            self.modelDis['vertexDist'][layer] = self.distributedVertexAsList(layerGeoms, layerRef)
+            vertexOrgPairList += self.orgVertexAsList(values['layerGeoms'], values['layerRef'])
+            self.modelDis['vertexDist'][layer] = self.distributedVertexAsList(layerGeoms, layerRef)[0]
+            self.modelDis['vertexDistGeoms'][layer] = self.distributedVertexAsList(layerGeoms, layerRef)[1]
         self.modelDis['vertexOrg'] = vertexOrgPairList
 
         if txtFile != '':
@@ -162,13 +204,27 @@ class createVoronoi():
             np.savetxt(txtFile+'_dist',self.modelDis['vertexOrg'])
 
     def circlesAroundRefPoints(self,layer,indexRef,cellSize):
+        
         #first we create buffers around points and merge them
         circleList = []
         polyPointList = []
-        for point in self.modelDis['vertexDist'][layer]:
-            circle = Point(point).buffer(cellSize)
+        # for point in self.modelDis['vertexDistBuffer'][layer]:
+        #     circle = Point(point).buffer(cellSize)
+        #     circleList.append(circle)
+        # circleUnions = unary_union(circleList)
+        #get the layer space dist
+        layerSpaceList = self.discLayers[layer]['layerSpaceList']
+        layerSpaceFraction = layerSpaceList.index(cellSize)/len(layerSpaceList)
+        firstCellSize = layerSpaceList[0]
+
+
+        for geom in self.modelDis['vertexDistGeoms'][layer]:
+            #fixing for the first cell avoiding long cells
+            circle = geom.buffer(cellSize - firstCellSize/2)
             circleList.append(circle)
         circleUnions = unary_union(circleList)
+        #to avoid corner
+        #circleUnions =  circleUnions.simplify(tolerance=4, preserve_topology=True)
         
         def getPolygonAndInteriors(polyGeom):
             exteriorInteriorPolys = [polyGeom] + [Polygon(ring) for ring in polyGeom.interiors]
@@ -181,14 +237,21 @@ class createVoronoi():
         elif circleUnions.geom_type == 'Polygon':
             circleUnionExtIntList += getPolygonAndInteriors(circleUnions)
 
+        #define opening angle 
+        opAngle = 30*np.pi/180
+        
+
         # from the multipolygons 
         polyPointList = []
         for circleUnionExtInt in circleUnionExtIntList:
             outerLength = circleUnionExtInt.exterior.length
-            if indexRef%2 == 0:
-                pointProg = np.arange(0,outerLength,np.pi*cellSize/3)
-            else:
-                pointProg = np.arange(np.pi*cellSize/6,outerLength+np.pi*cellSize/6,np.pi*cellSize/3)
+            #pointProg = np.arange(0,outerLength,np.sin(np.pi/2 - layerSpaceFraction*np.pi/6)*cellSize)
+            pointProg = np.arange(0,outerLength,(0.8 - layerSpaceFraction*0.4)*cellSize)
+            # if indexRef%2 == 0:
+            #     pointProg = np.arange(0,outerLength,np.sin(opAngle)*cellSize)
+            # else:
+            #     pointProg = np.arange(np.pi*cellSize/6,outerLength+np.pi*cellSize/6,np.sin(opAngle)*cellSize)
+            #     #pointProg = np.arange(np.pi*cellSize/6,outerLength+np.pi*cellSize/6,np.pi*cellSize/3)
             for prog in pointProg:
                 pointXY = list(circleUnionExtInt.exterior.interpolate(prog).xy)
                 polyPointList.append([pointXY[0][0],pointXY[1][0]])
@@ -213,11 +276,23 @@ class createVoronoi():
                     break
                 i+=1
 
-            self.discLayers[layer]['layerSpaceListt'] = cellSizeList
+            self.discLayers[layer]['layerSpaceList'] = cellSizeList
 
             print('\n/--------Layer %s discretization-------/'%layer)
             print('Progressive cell size list: %s m.'%str(cellSizeList))
 
+            #starting from the second size if multiple sizes are present
+            # if len(cellSizeList) > 1:
+            #     cellSizeList = cellSizeList[1:]
+            # else:
+            #     cellSizeList = cellSizeList
+
+            #fixing distances for the first cell
+            #cellSizeList = [size - cellSizeList[0]/2 for size in cellSizeList]
+            
+
+
+            #looping
             for index, cellSize in enumerate(cellSizeList):
                 circleUnion, polyPointList = self.circlesAroundRefPoints(layer,index,cellSize)
                 refBuffer = gpd.GeoSeries(circleUnion)
@@ -346,7 +421,7 @@ class createVoronoi():
         #create a multipoint object
         pointMulti = MultiPoint(self.modelDis['vertexTotal'])
         #original regions
-        regions = voronoi_diagram(pointMulti)
+        regions = voronoi_diagram(pointMulti, tolerance=0.5)
         #object for clipped regions
         clippedRegions = []
         #loop over all polygons
@@ -408,7 +483,7 @@ class createVoronoi():
 
     def getPolyAsShp(self,circleList,outputPath='output'):
         start = time.time()
-        schema_props = OrderedDict([("id", "int")])
+        schema_props = OrderedDict([("id", "str")])
         schema={"geometry": "Polygon", "properties": schema_props}
 
         #check or create an output folder
@@ -418,23 +493,25 @@ class createVoronoi():
             os.mkdir(outputPath)
             print('The output folder %s has been generated.'%outputPath)
 
-        shapePath = os.path.join(outputPath, self.modelDis['meshName']+circleList+'.shp')
+        shapePath = os.path.join(outputPath, self.modelDis['meshName']+circleList)
         
         outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
                             crs = self.modelDis['crs'], schema=schema)
-        for index, poly in enumerate(self.modelDis[circleList].geoms):
-            polyCoordList = []
-            x,y = poly.exterior.coords.xy
-            polyCoordList.append(list(zip(x,y)))
-            if poly.interiors[:] != []:
-                interiorList = []
-                for interior in poly.interiors:
-                    polyCoordList.append(interior.coords[:])
-            feature = {
-                "geometry": {'type':'Polygon',
-                            'coordinates':polyCoordList},
-                "properties": OrderedDict([("id",index)]),
-            }
+        
+        if isinstance(self.modelDis[circleList], dict):
+            for key, value in self.modelDis[circleList].items():
+                if self.isMultiGeometry(value):
+                    for index, poly in enumerate(value.geoms):
+                        feature = getFionaDictPoly(poly, index)
+                        outFile.write(feature)
+
+        if self.isMultiGeometry(self.modelDis[circleList]):
+            for index, poly in enumerate(self.modelDis[circleList].geoms):
+                feature = getFionaDictPoly(poly, index)
+                outFile.write(feature)
+        else:
+            poly = self.modelDis[circleList]
+            feature = getFionaDictPoly(poly, '1')
             outFile.write(feature)
         outFile.close()
         
@@ -442,16 +519,25 @@ class createVoronoi():
         print('\nTime required for voronoi shapefile: %.2f seconds \n'%(end - start), flush=True)
 
     def getPointsAsShp(self,pointList,shapePath=''):
-        schema_props = OrderedDict([("id", "int")])
+        schema_props = OrderedDict([("id", "str")])
         schema={"geometry": "Point", "properties": schema_props}
         if shapePath != '':
             outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
                                 crs = self.modelDis['crs'], schema=schema)
-            for index, point in enumerate(self.modelDis[pointList]):
-                feature = {
-                    "geometry": {'type':'Point',
-                                'coordinates':(point[0],point[1])},
-                    "properties": OrderedDict([("id",index)]),
-                }
-                outFile.write(feature)
+            if isinstance(self.modelDis[pointList], dict):
+                print(self.modelDis[pointList].keys())
+                for key, value in self.modelDis[pointList].items():
+                    for index, point in enumerate(value):
+                        feature = getFionaDictPoint(point, index)
+                        if feature != None:
+                            outFile.write(feature)
+                        else:
+                            print('Something went wrong with %s'%point)
+            else:
+                for index, point in enumerate(self.modelDis[pointList]):
+                    feature = getFionaDictPoint(point, index)
+                    if feature != None:
+                        outFile.write(feature)
+                    else:
+                        print('Something went wrong with %s'%point)
             outFile.close()
