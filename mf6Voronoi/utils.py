@@ -1,5 +1,5 @@
 import geopandas as gpd
-import os
+import os, shutil
 import folium
 import io
 import fiona
@@ -9,7 +9,8 @@ import numpy as np
 import rasterio
 import rasterio.mask
 import tempfile
-from shapely.geometry import Point, LineString
+from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, mapping
+from shapely.ops import split, unary_union, cascaded_union, voronoi_diagram
 import shutil
 from collections import OrderedDict
 
@@ -56,8 +57,37 @@ def remove_files_and_folder(path_to_file, folder=True):
         os.rmdir(folder)
     """
 
-def filterVertexCloseLimit(layerGeom,layerRef,pointList,modelDis):
+def isMultiGeometry(geom):
+    return isinstance(geom, (MultiPoint, MultiLineString, MultiPolygon))
+
+#auxiliary funtion to intersect:
+def intersectLimitLayer(discLayerGeom, modelDis):
+    discGeomList = []  
+    #generic 
+    if isMultiGeometry(discLayerGeom):
+        for partGeom in discLayerGeom.geoms:
+            discGeomClip =  modelDis['limitGeometry'].intersection(partGeom)
+            if not discGeomClip.is_empty:
+                discGeomList.append(discGeomClip)
+    else:
+        discGeomClip =  modelDis['limitGeometry'].intersection(discLayerGeom)
+        if not discGeomClip.is_empty:
+            discGeomList.append(discGeomClip)
+
+    unaryGeom = unary_union(discGeomList)
+
+    if isMultiGeometry(unaryGeom):
+        unaryFilter = [geom for geom in unaryGeom.geoms]
+    else:
+        unaryFilter = [unaryGeom]
+
+    return unaryFilter    
+
+def filterVertexCloseLimit(layerRef,layerGeom,pointList,modelDis):
     filterPointList = []
+    pointObject = layerGeom.exterior.coords.xy
+    pointList = list(zip(pointObject[0],pointObject[1]))
+
     if layerGeom.buffer(layerRef).within(modelDis['limitGeometry']):
         filterPointList = pointList
     else:
@@ -98,3 +128,12 @@ def getFionaDictPoint(pointGeom, index):
                 "properties": OrderedDict([("id",index)]),
             }
         return feature
+
+def initiateOutputFolder(outputPath):
+    if os.path.isdir(outputPath):
+        print('The output folder %s exists and has been cleared'%outputPath)
+        shutil.rmtree(outputPath)
+        os.mkdir(outputPath)
+    else:
+        os.mkdir(outputPath)
+        print('The output folder %s has been generated.'%outputPath)
