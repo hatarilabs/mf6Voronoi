@@ -1,5 +1,8 @@
 from mf6Voronoi.geoVoronoi import createVoronoi
 
+# from voronoi utils
+from mf6Voronoi.utils import getVoronoiAsShp
+
 #Create mesh object specifying the coarse mesh and the multiplier
 vorMesh = createVoronoi(meshName='regionalModel',maxRef = 200, multiplier=1.5)
 
@@ -14,9 +17,8 @@ vorMesh.generateOrgDistVertices()
 vorMesh.createPointCloud()
 vorMesh.generateVoronoi()
 
-#Export generated voronoi mesh
-outPath = 'output'
-vorMesh.getVoronoiAsShp(outputPath=outPath)
+# Export generated voronoi mesh
+getVoronoiAsShp(vorMesh.modelDis, shapePath='output/'+vorMesh.modelDis['meshName']+'.shp')
 
 #check mesh generation
 from mf6Voronoi.meshProperties import meshShape

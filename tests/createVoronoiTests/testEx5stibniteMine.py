@@ -1,5 +1,8 @@
 from mf6Voronoi.geoVoronoi import createVoronoi
 
+# from voronoi utils
+from mf6Voronoi.utils import getVoronoiAsShp
+
 #Create mesh object specifying the coarse mesh and the multiplier
 vorMesh = createVoronoi(meshName='stibniteMine',maxRef = 500, multiplier=2.5)
 
@@ -17,8 +20,8 @@ vorMesh.generateOrgDistVertices()
 vorMesh.createPointCloud()
 vorMesh.generateVoronoi()
 
-#Export generated voronoi mesh
-vorMesh.getVoronoiAsShp(outputPath='output')
+# Export generated voronoi mesh
+getVoronoiAsShp(vorMesh.modelDis, shapePath='output/'+vorMesh.modelDis['meshName']+'.shp')
 
 #check mesh generation
 from mf6Voronoi.meshProperties import meshShape

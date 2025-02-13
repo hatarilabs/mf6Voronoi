@@ -1,6 +1,7 @@
 #!/bin/bash
-echo "Removing output folder"
-rm -rf output
+echo "Removing and creating output folder"
+rm -rf "output"
+mkdir "output"
 
 # Run Python script 1
 echo "Running test 1"
