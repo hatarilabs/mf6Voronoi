@@ -12,10 +12,9 @@ import geopandas as gpd
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, mapping
 from collections import OrderedDict
 from .utils import (processVertexFilterCloseLimit, 
-                    getFionaDictPoly, 
-                    getFionaDictPoint, 
                     intersectLimitLayer, 
-                    isMultiGeometry)
+                    isMultiGeometry,
+                    printHeader)
 
 class createVoronoi():
     def __init__(self, meshName, maxRef, multiplier, overlapping=True):
@@ -177,7 +176,9 @@ class createVoronoi():
 
     def generateAllCircles(self):
         partialCircleUnionList = []
-        partialCircleUnionInteriorList = []     
+        partialCircleUnionInteriorList = []    
+
+        printHeader() 
 
         for layer, value in self.discLayers.items():
             cellSizeList = [value['layerRef']]
@@ -191,8 +192,7 @@ class createVoronoi():
                     break
                 i+=1
 
-            self.discLayers[layer]['layerSpaceList'] = cellSizeList
-
+            self.discLayers[layer]['layerSpaceList'] = cellSizeList           
             print('\n/--------Layer %s discretization-------/'%layer)
             print('Progressive cell size list: %s m.'%str(cellSizeList))
 
@@ -313,8 +313,7 @@ class createVoronoi():
             refPoint = Point(point[0],point[1])
             if self.modelDis['limitGeometry'].contains(refPoint):
                 totalDefPoints.append(point)
-        self.modelDis['vertexTotal'] = totalDefPoints
-
+        self.modelDis['vertexTotal'] = totalDefPoints  
         print('\n/----Sumary of points for voronoi meshing----/')
         print('Distributed points from layers: %d'%len(self.modelDis['vertexDist']))
         print('Points from layer buffers: %d'%len(self.modelDis['vertexBuffer']))

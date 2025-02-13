@@ -253,3 +253,24 @@ def getPointsAsShp(modelDis,pointList,shapePath=''):
                 else:
                     print('Something went wrong with %s'%point)
         outFile.close()
+
+#########
+# miscelaneous functions
+#########
+
+def printHeader():
+    print('''
+                                                                                                                                                     
+    _7L!                                                                           "c\.    vLL|                      -oL[                             
+    ^MQG                                /{o'                                      ;&QB>    uQQI                      ,WQY                             
+    ^DQg                                4QM:                                       ^v".    LQQ*                      :KQG                             
+    ^DQX%#gXPdCl      ^[fhXGXVfI:     [qKQRhqqq%    )e2dPGggTl`      LFy;I54PEl ;6q52u     LQQ*      )e2dPGggTl`     :KQktF4PXSu%`     '?y4PXV2o:     
+    ^DQNGw[ItmQQg'    /P4#a]tfKQ&i    v1AQNz111"    cOSu1]epMQX^     GQ0O4zI17_ 'oLMQ&.    LQQ*      cOSu1]epMQX^    :KQB6oI!LhMQbs   ,YQM#?Iepq_     
+    ^DQG.     LQQ[        _="/rWQE      EQD:            '="/7QQn     XQ0o          UQk.    LQQ*          '="/7QQT    :KQG      "GQRr  ;$QBl`          
+    ^DQg      *QQj    `{pA&YPXPMQk      EQB^        ,1h&&bXXbQQ5     XQD,         _UQk.    LQQ*      ,1h&&bXXbQQ5    :KQG       sQQS   +#YWKGy};      
+    ^DQg      IQQj   ^XQKe"-  :@QY      gQB;       v8Qb}^`  iQQ5     XQD;         _UQk.    LQQ{     v8Qb}^`  iQQ5    :KQG       ?QQf      +{J&QKz     
+    ^DQg      IQQj   IQQn     iWQk      VQRc       3QQc    .1QQ5     XQD;         _UQk.    7QQL     3QQl    .1QQ5    :KQY`    .i8Q&/   ;=    =DQW:    
+    ^NQG      ?QQL   'FWMVfJ5XbPQQ7`    >bQMd5F4i  "ERHmwC6GPOQHs    GQN^         _KQ&.    =4RQY5-  "ERHmwC6GPOQHs   ,WQ@Oh5FhOR@f^   _XWYS5mAQ$e     
+    -I!c      =!!)     "?u#L1%_.caj'     `veTTLa"    <1TTj!<.'{7t    l!I-         .*!s       \?jz`    <1TTj!<.'{7t   -7],vtn#L[i'     .)sen#ut%:      
+
+''')

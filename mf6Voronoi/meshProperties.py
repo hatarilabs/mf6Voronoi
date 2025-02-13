@@ -3,7 +3,7 @@ import numpy as np
 import fiona
 from shapely.geometry import Polygon
 from tqdm import tqdm
-
+from .utils import printHeader
 
 class meshShape:
 	def __init__(self,path_to_mesh_shp):
@@ -29,7 +29,7 @@ class meshShape:
 		        if var >= coordArray[interval] and var < coordArray[interval+1]:
 		            return interval
 		            break
-		            
+		printHeader()            
 		print('\nCreating a unique list of vertices [[x1,y1],[x2,y2],...]')
 		for index, row in enumerate(tqdm(vorMesh, total= len(vorMesh))):
 		    #vertices xy
