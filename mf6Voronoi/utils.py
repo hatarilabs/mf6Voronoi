@@ -1,5 +1,6 @@
 import geopandas as gpd
-import os, shutil, time, inspect, mf6Voronoi
+import os, shutil, time
+from pathlib import Path
 import io
 import fiona
 import numpy as np
@@ -275,30 +276,30 @@ def printHeader():
 gQQ>                                                                                       
 dQU;                                 +|:                                     :v)_          
 ;PQm'                                %B$s                                    .gQMe          
-\YQ7.                               -3QE_                                     <e}'          
+PYQ7.                               -3QE_                                     <e}'          
 c8Qx                                '$RT                                                    
 ?HM"   )7yw1=       .)r]jJfzi.   `=>!QDuvxxi_   `<s[LCwe<    ,>seua:  ^!C3o' `eur           
 oRk= vdZ6qDQE"     ]PF)/+vJBNe`  :l{6Q8!I![s' .ebJ<//%3MD]   )fffQDv.ebPhZY/ QQQ#           
 JQS'7b]_  ?Q$r     EWy     3Qg^     pQX       :GWj    _mQ5'     lQ&TT4v   .  rQDl           
-5QnCV/    ]QZ<      :"/\iss4Q5:    -GQS        .:|/<v%IPQJ`     !Qk[h;       ?QK"           
-.SQXd^    _JQh:    -*53e*%\aDQL.    _&QF       '!6fa{v\zMQa      7Q@q|        1Q@,           
+5QnCV/    ]QZ<      :"/iiss4Q5:    -GQS        .:|/<v%IPQJ`     !Qk[h;       ?QK"           
+.SQXd^    _JQh:    -*53e*ppaDQL.    _&QF       '!6fa{vzzMQa      7Q@q|        1Q@,           
 ;4QWi     :pQp    _dQY-   xm@Qa     _OQd      ^XQV.   rhHQ!     .wQBo         [QK^           
 KkQ6'     '2QO}vc/:&QDa}75L<2Qgx="= .nQMCv)%I"UUQ81}j57>SQhi=|; .dQA'         %QQCi%)_       
-/jJ>       \2mw[i: /zmVFa|  ;t53j}+  `1mVpn!>_ UuSh21/  =oFy7{; .z#I          .nm57r/.       
+/jJ>       82mw[i: /zmVFa|  ;t53j}+  `1mVpn!>_ UuSh21/  =oFy7{; .z#I          .nm57r/.       
                                                                                                                                                                                                                                       
 ''')
     
 def copyTemplate(templateType, prefix = ''):
     utilsPath = os.path.realpath(__file__)
-    examplePath = os.path.join(os.path.dirname(os.path.dirname(utilsPath)),'examples','notebookTemplates')
+    examplePath = os.path.join(os.path.dirname(utilsPath),'examples','notebooks')
     workingPath = os.getcwd()
 
     def generateSrcDstPath():
-        srcPath = os.path.join(examplePath, templateName)
+        srcPath = str(Path(os.path.join(examplePath, templateName)))
         if prefix != '':
-            dstPath = os.path.join(workingPath, prefix+'_'+templateName)
+            dstPath = str(Path(os.path.join(workingPath, prefix+'_'+templateName)))
         else:
-            dstPath = os.path.join(workingPath, templateName)
+            dstPath = str(Path(os.path.join(workingPath, templateName)))
         return srcPath,dstPath
 
     if templateType == 'generateVoronoi':
@@ -307,6 +308,10 @@ def copyTemplate(templateType, prefix = ''):
         shutil.copy2(srcPath,dstPath)
     elif templateType == 'modelCreation':
         templateName = 'p2_'+templateType+'.ipynb'
+        srcPath,dstPath = generateSrcDstPath()
+        shutil.copy2(srcPath,dstPath)
+    elif templateType == 'obsCalculated':
+        templateName = 'p3_'+templateType+'.ipynb'
         srcPath,dstPath = generateSrcDstPath()
         shutil.copy2(srcPath,dstPath)
     else:
