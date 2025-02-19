@@ -1,5 +1,5 @@
 import geopandas as gpd
-import os, shutil, time
+import os, shutil, time, inspect, mf6Voronoi
 import io
 import fiona
 import numpy as np
@@ -67,6 +67,8 @@ def intersectLimitLayer(discLayerGeom, modelDis):
         discGeomClip =  modelDis['limitGeometry'].intersection(discLayerGeom)
         if not discGeomClip.is_empty:
             discGeomList.append(discGeomClip)
+        else: 
+            return False
 
     unaryGeom = unary_union(discGeomList)
 
@@ -105,6 +107,11 @@ def processVertexFilterCloseLimit(layerRef,layerGeom,modelDis,vertexType):
             for prog in pointProg:
                 pointXY = list(layerGeom.interpolate(prog).xy)
                 pointList.append([pointXY[0][0],pointXY[1][0]])
+        elif layerGeom.geom_type == 'Point':
+            #covered in the third conditional
+            pass
+        else:
+            print('Something went wrong with the dist vertex')
 
     #second conditional
     if layerGeom.geom_type == 'Polygon' or layerGeom.geom_type == 'LineString':
@@ -133,6 +140,9 @@ def processVertexFilterCloseLimit(layerRef,layerGeom,modelDis,vertexType):
         if layerGeom.buffer(layerRef).within(modelDis['limitGeometry']):
             filterPointList = [point]
             filterPointListGeom = layerGeom
+        else:
+            filterPointList = []
+            filterPointListGeom = None
 
     return filterPointList, filterPointListGeom 
 
@@ -260,17 +270,44 @@ def getPointsAsShp(modelDis,pointList,shapePath=''):
 
 def printHeader():
     print('''
-                                                                                                                                                     
-    _7L!                                                                           "c\.    vLL|                      -oL[                             
-    ^MQG                                /{o'                                      ;&QB>    uQQI                      ,WQY                             
-    ^DQg                                4QM:                                       ^v".    LQQ*                      :KQG                             
-    ^DQX%#gXPdCl      ^[fhXGXVfI:     [qKQRhqqq%    )e2dPGggTl`      LFy;I54PEl ;6q52u     LQQ*      )e2dPGggTl`     :KQktF4PXSu%`     '?y4PXV2o:     
-    ^DQNGw[ItmQQg'    /P4#a]tfKQ&i    v1AQNz111"    cOSu1]epMQX^     GQ0O4zI17_ 'oLMQ&.    LQQ*      cOSu1]epMQX^    :KQB6oI!LhMQbs   ,YQM#?Iepq_     
-    ^DQG.     LQQ[        _="/rWQE      EQD:            '="/7QQn     XQ0o          UQk.    LQQ*          '="/7QQT    :KQG      "GQRr  ;$QBl`          
-    ^DQg      *QQj    `{pA&YPXPMQk      EQB^        ,1h&&bXXbQQ5     XQD,         _UQk.    LQQ*      ,1h&&bXXbQQ5    :KQG       sQQS   +#YWKGy};      
-    ^DQg      IQQj   ^XQKe"-  :@QY      gQB;       v8Qb}^`  iQQ5     XQD;         _UQk.    LQQ{     v8Qb}^`  iQQ5    :KQG       ?QQf      +{J&QKz     
-    ^DQg      IQQj   IQQn     iWQk      VQRc       3QQc    .1QQ5     XQD;         _UQk.    7QQL     3QQl    .1QQ5    :KQY`    .i8Q&/   ;=    =DQW:    
-    ^NQG      ?QQL   'FWMVfJ5XbPQQ7`    >bQMd5F4i  "ERHmwC6GPOQHs    GQN^         _KQ&.    =4RQY5-  "ERHmwC6GPOQHs   ,WQ@Oh5FhOR@f^   _XWYS5mAQ$e     
-    -I!c      =!!)     "?u#L1%_.caj'     `veTTLa"    <1TTj!<.'{7t    l!I-         .*!s       \?jz`    <1TTj!<.'{7t   -7],vtn#L[i'     .)sen#ut%:      
-
+                                                                                                    
+*mSi                                                                                       
+gQQ>                                                                                       
+dQU;                                 +|:                                     :v)_          
+;PQm'                                %B$s                                    .gQMe          
+\YQ7.                               -3QE_                                     <e}'          
+c8Qx                                '$RT                                                    
+?HM"   )7yw1=       .)r]jJfzi.   `=>!QDuvxxi_   `<s[LCwe<    ,>seua:  ^!C3o' `eur           
+oRk= vdZ6qDQE"     ]PF)/+vJBNe`  :l{6Q8!I![s' .ebJ<//%3MD]   )fffQDv.ebPhZY/ QQQ#           
+JQS'7b]_  ?Q$r     EWy     3Qg^     pQX       :GWj    _mQ5'     lQ&TT4v   .  rQDl           
+5QnCV/    ]QZ<      :"/\iss4Q5:    -GQS        .:|/<v%IPQJ`     !Qk[h;       ?QK"           
+.SQXd^    _JQh:    -*53e*%\aDQL.    _&QF       '!6fa{v\zMQa      7Q@q|        1Q@,           
+;4QWi     :pQp    _dQY-   xm@Qa     _OQd      ^XQV.   rhHQ!     .wQBo         [QK^           
+KkQ6'     '2QO}vc/:&QDa}75L<2Qgx="= .nQMCv)%I"UUQ81}j57>SQhi=|; .dQA'         %QQCi%)_       
+/jJ>       \2mw[i: /zmVFa|  ;t53j}+  `1mVpn!>_ UuSh21/  =oFy7{; .z#I          .nm57r/.       
+                                                                                                                                                                                                                                      
 ''')
+    
+def copyTemplate(templateType, prefix = ''):
+    utilsPath = os.path.realpath(__file__)
+    examplePath = os.path.join(os.path.dirname(os.path.dirname(utilsPath)),'examples','notebookTemplates')
+    workingPath = os.getcwd()
+
+    def generateSrcDstPath():
+        srcPath = os.path.join(examplePath, templateName)
+        if prefix != '':
+            dstPath = os.path.join(workingPath, prefix+'_'+templateName)
+        else:
+            dstPath = os.path.join(workingPath, templateName)
+        return srcPath,dstPath
+
+    if templateType == 'generateVoronoi':
+        templateName = 'p1_'+templateType+'.ipynb'
+        srcPath,dstPath = generateSrcDstPath()
+        shutil.copy2(srcPath,dstPath)
+    elif templateType == 'modelCreation':
+        templateName = 'p2_'+templateType+'.ipynb'
+        srcPath,dstPath = generateSrcDstPath()
+        shutil.copy2(srcPath,dstPath)
+    else:
+        print("The template you want doesn't exists capullo")

@@ -76,7 +76,9 @@ class createVoronoi():
                     i+=1
                 #intersect with the limit layer
                 unaryFilter = intersectLimitLayer(geomGeom, self.modelDis)
-                self.discLayers[layerName]['layerGeoms'] += unaryFilter
+                if unaryFilter:
+                    #if not unaryFilter.is_empty:
+                    self.discLayers[layerName]['layerGeoms'] += unaryFilter
             else:
                 print('You are working with a uncompatible geometry. Remember to use single parts')
                 print('Check this file: %s \n'%shapePath)
@@ -94,7 +96,6 @@ class createVoronoi():
             if filterPointList != None:
                 vertexList += filterPointList
             else:
-                print(layerGeom)
                 print('/-----Problem has been bound when extracting org vertex-----/')
 
         return vertexList
@@ -353,82 +354,4 @@ class createVoronoi():
         end = time.time()
         print('\nTime required for voronoi generation: %.2f seconds \n'%(end - start), flush=True)
 
-    # def getVoronoiAsShp(self, shapePath=''):
-    #     print('\n/----Generation of the voronoi shapefile----/')
-    #     start = time.time()
-    #     schema_props = OrderedDict([("id", "int")])
-    #     schema={"geometry": "Polygon", "properties": schema_props}
-
-    #     outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
-    #                         crs = self.modelDis['crs'], schema=schema)
-        
-    #     for index, poly in enumerate(self.modelDis['voronoiRegions'].geoms):
-    #         polyCoordList = []
-    #         x,y = poly.exterior.coords.xy
-    #         polyCoordList.append(list(zip(x,y)))
-    #         if poly.interiors[:] != []:
-    #             interiorList = []
-    #             for interior in poly.interiors:
-    #                 polyCoordList.append(interior.coords[:])
-    #         feature = {
-    #             "geometry": {'type':'Polygon',
-    #                         'coordinates':polyCoordList},
-    #             "properties": OrderedDict([("id",index)]),
-    #         }
-    #         outFile.write(feature)
-    #     outFile.close()
-
-    #     end = time.time()
-    #     print('\nTime required for voronoi shapefile: %.2f seconds \n'%(end - start), flush=True)
-
-    # def getPolyAsShp(self,circleList,shapePath=''):
-    #     start = time.time()
-    #     schema_props = OrderedDict([("id", "str")])
-    #     schema={"geometry": "Polygon", "properties": schema_props}
-        
-    #     outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
-    #                         crs = self.modelDis['crs'], schema=schema)
-        
-    #     if isinstance(self.modelDis[circleList], dict):
-    #         for key, value in self.modelDis[circleList].items():
-    #             if isMultiGeometry(value):
-    #                 for index, poly in enumerate(value.geoms):
-    #                     feature = getFionaDictPoly(poly, index)
-    #                     outFile.write(feature)
-
-    #     if isMultiGeometry(self.modelDis[circleList]):
-    #         for index, poly in enumerate(self.modelDis[circleList].geoms):
-    #             feature = getFionaDictPoly(poly, index)
-    #             outFile.write(feature)
-    #     else:
-    #         poly = self.modelDis[circleList]
-    #         feature = getFionaDictPoly(poly, '1')
-    #         outFile.write(feature)
-    #     outFile.close()
-        
-    #     end = time.time()
-    #     print('\nTime required for voronoi shapefile: %.2f seconds \n'%(end - start), flush=True)
-
-    # def getPointsAsShp(self,pointList,shapePath=''):
-    #     schema_props = OrderedDict([("id", "str")])
-    #     schema={"geometry": "Point", "properties": schema_props}
-    #     if shapePath != '':
-    #         outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
-    #                             crs = self.modelDis['crs'], schema=schema)
-    #         if isinstance(self.modelDis[pointList], dict):
-    #             print(self.modelDis[pointList].keys())
-    #             for key, value in self.modelDis[pointList].items():
-    #                 for index, point in enumerate(value):
-    #                     feature = getFionaDictPoint(point, index)
-    #                     if feature != None:
-    #                         outFile.write(feature)
-    #                     else:
-    #                         print('Something went wrong with %s'%point)
-    #         else:
-    #             for index, point in enumerate(self.modelDis[pointList]):
-    #                 feature = getFionaDictPoint(point, index)
-    #                 if feature != None:
-    #                     outFile.write(feature)
-    #                 else:
-    #                     print('Something went wrong with %s'%point)
-    #         outFile.close()
+   
