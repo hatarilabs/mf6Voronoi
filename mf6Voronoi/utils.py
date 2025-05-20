@@ -1,5 +1,5 @@
 import geopandas as gpd
-import os, shutil, time
+import os, shutil, time, json
 from pathlib import Path
 import io
 import fiona
@@ -292,27 +292,32 @@ KkQ6'     '2QO}vc/:&QDa}75L<2Qgx="= .nQMCv)%I"UUQ81}j57>SQhi=|; .dQA'         %Q
 def copyTemplate(templateType, prefix = ''):
     utilsPath = os.path.realpath(__file__)
     examplePath = os.path.join(os.path.dirname(utilsPath),'examples','notebooks')
+    jsonPath = os.path.join(os.path.dirname(utilsPath),'examples','json','templates.json')
     workingPath = os.getcwd()
+    
+    with open(jsonPath, 'r') as file:
+        templateDict = json.load(file)
 
-    def generateSrcDstPath():
-        srcPath = str(Path(os.path.join(examplePath, templateName)))
+    try:
+        tempDict = templateDict[templateType]
+        srcPath = str(Path(os.path.join(examplePath, tempDict["template"])))
         if prefix != '':
-            dstPath = str(Path(os.path.join(workingPath, prefix+'_'+templateName)))
+            dstPath = str(Path(os.path.join(workingPath, prefix+'_'+tempDict["template"])))
         else:
-            dstPath = str(Path(os.path.join(workingPath, templateName)))
-        return srcPath,dstPath
+            dstPath = str(Path(os.path.join(workingPath, tempDict["template"])))
+        shutil.copy2(srcPath,dstPath)
+    except KeyError:
+        print("The template: %s doesn't exists capullo"%templateType)
 
-    if templateType == 'generateVoronoi':
-        templateName = 'p1_'+templateType+'.ipynb'
-        srcPath,dstPath = generateSrcDstPath()
-        shutil.copy2(srcPath,dstPath)
-    elif templateType == 'modelCreation':
-        templateName = 'p2_'+templateType+'.ipynb'
-        srcPath,dstPath = generateSrcDstPath()
-        shutil.copy2(srcPath,dstPath)
-    elif templateType == 'obsCalculated':
-        templateName = 'p3_'+templateType+'.ipynb'
-        srcPath,dstPath = generateSrcDstPath()
-        shutil.copy2(srcPath,dstPath)
-    else:
-        print("The template you want doesn't exists capullo")
+def listTemplates():
+    utilsPath = os.path.realpath(__file__)
+    jsonPath = os.path.join(os.path.dirname(utilsPath),'examples','json','templates.json')
+    with open(jsonPath, 'r') as file:
+        templateDict = json.load(file)
+
+    print("/-------- List of available mf6Voronoi templates --------/\n")
+
+    for key in templateDict.keys():
+        print("Nr %d: %s"%(templateDict[key]["index"],key))
+        print("    File: %s"%(templateDict[key]["template"]))
+        print("    Description: %s\n"%(templateDict[key]["desc"]))

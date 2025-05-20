@@ -7,8 +7,8 @@ from mf6Voronoi.utils import getVoronoiAsShp
 vorMesh = createVoronoi(meshName='regionalModel',maxRef = 200, multiplier=1.5)
 
 #Open limit layers and refinement definition layers
-vorMesh.addLimit('basin','../../examples/regionalModel/shp/Angascancha_Basin_Extension.shp')
-vorMesh.addLayer('river','../../examples/regionalModel/shp/rios.shp',50)
+vorMesh.addLimit('basin','../../examples/regionalModel/shpOld/Angascancha_Basin_Extension.shp')
+vorMesh.addLayer('river','../../examples/regionalModel/shpOld/rios.shp',50)
 
 #Generate point pair array
 vorMesh.generateOrgDistVertices()

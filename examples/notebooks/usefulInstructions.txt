@@ -13,11 +13,8 @@ pip install -e .
 
 Modify the version in pyproject.toml
 
-Delete dist folder
-rm -rf dist
-
-Delete *.egg.info
-rm -rf *.egg-info
+Delete dist folder and *.egg.info 
+rm -rf dist & rm -rf *.egg-info
 
 Build a package
 python3 -m build

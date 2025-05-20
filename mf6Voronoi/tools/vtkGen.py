@@ -187,6 +187,7 @@ class Mf6VtkGenerator:
         obsList = [x for x in self.packageList if re.fullmatch('obs',x,re.IGNORECASE)]
         #print(bcList)
         for bc in bcList:
+            print(bc)
             if bc[3]!='A':
                 self.exportBc(bc, nper)
                 print("%s vtk generated"%bc)
@@ -197,7 +198,7 @@ class Mf6VtkGenerator:
     def generateHeadVtk(self, nper, crop=False):
         headObj = self.gwf.output.head()
         heads = headObj.get_data(kstpkper=(0,nper))
-        waterTable = flopy.utils.postprocessing.get_water_table(heads)
+        waterTable = flopy.utils.postprocessing.get_water_table(heads).flatten()
 
         geomVtk = pv.read(self.geomPath)
         geomVtk.clear_cell_data()
@@ -217,19 +218,39 @@ class Mf6VtkGenerator:
     def generateWaterTableVtk(self, nper):
         headObj = self.gwf.output.head()
         heads = headObj.get_data(kstpkper=(0,nper))
-        waterTable = flopy.utils.postprocessing.get_water_table(heads)
+        waterTable = flopy.utils.postprocessing.get_water_table(heads).flatten()
 
-        xCell = self.gwf.modelgrid.xcellcenters
-        yCell = self.gwf.modelgrid.ycellcenters
+        grid = self.gwf.modelgrid
+
+        xCell = grid.xcellcenters.flatten()
+        yCell = grid.ycellcenters.flatten()
         zCell = waterTable.data
 
-        xyVerts = self.gwf.modelgrid.verts
+        xyVerts = grid.verts
 
         # Interpolate z-values at new xy locations
         zVert = griddata((xCell, yCell), zCell, xyVerts, method='nearest')
+
+        # Working with grid type
+        if type(self.gwf.modelgrid) == flopy.discretization.vertexgrid.VertexGrid:            
+            faces = np.hstack([cell[3:] for cell in grid.cell2d])
+        elif type(self.gwf.modelgrid) == flopy.discretization.structuredgrid.StructuredGrid:
+            nrowvert = grid.nrow + 1
+            ncolvert = grid.ncol + 1
+            npoints = nrowvert * ncolvert
+            iverts = []
+            for i in range(grid.nrow):
+                for j in range(grid.ncol):
+                    iv1 = i * ncolvert + j  # upper left point number
+                    iv2 = iv1 + 1
+                    iv4 = (i + 1) * ncolvert + j
+                    iv3 = iv4 + 1
+                    iverts.append([4, iv1, iv2, iv3, iv4])  
+            faces = np.array(iverts).flatten() 
+        else:
+            print('Your grid type is not supported')
         
-        faces = np.hstack([cell[3:] for cell in self.gwf.modelgrid.cell2d])
-        points = list(zip(self.gwf.modelgrid.verts[:,0],self.gwf.modelgrid.verts[:,1],zVert))
+        points = list(zip(grid.verts[:,0],grid.verts[:,1],zVert))
         mesh = pv.PolyData(points, faces)
 
         mesh.cell_data['waterTable'] = waterTable

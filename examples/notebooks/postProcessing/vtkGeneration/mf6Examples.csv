@@ -1,0 +1,2 @@
+Example,Simulation,Namefile(s),Grid Dimensions,Packages,mv6Voronoi,des
+1,ex-gwf-twri01,ex-gwf-twri01.nam,(5, 15, 15),CHD DIS DRN IC IMS NPF OC RCHA TDIS WEL,,

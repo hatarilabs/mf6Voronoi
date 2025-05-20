@@ -7,7 +7,7 @@ from scipy.spatial import Voronoi,cKDTree
 #import geospatial libraries
 import fiona
 from tqdm import tqdm
-from shapely.ops import split, unary_union, cascaded_union, voronoi_diagram
+from shapely.ops import split, unary_union, voronoi_diagram
 import geopandas as gpd
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, mapping
 from collections import OrderedDict
@@ -137,7 +137,8 @@ class createVoronoi():
 
         for geom in self.modelDis['vertexDistGeoms'][layer]:
             #fixing for the first cell avoiding long cells
-            circle = geom.buffer(cellSize - firstCellSize/2)
+            #circle = geom.buffer(cellSize - firstCellSize/2) #Check this
+            circle = geom.buffer(cellSize) #Check this
             circleList.append(circle)
         circleUnions = unary_union(circleList)
 
@@ -160,7 +161,7 @@ class createVoronoi():
         for circleUnionExtInt in circleUnionExtIntList:
             outerLength = circleUnionExtInt.exterior.length
             #pointProg = np.arange(0,outerLength,np.sin(np.pi/2 - layerSpaceFraction*np.pi/6)*cellSize)
-            pointProg = np.arange(0,outerLength,(0.8 - layerSpaceFraction*0.4)*cellSize)
+            pointProg = np.arange(0,outerLength,(0.8 - layerSpaceFraction*0.4)*cellSize) #To review the cell size
             for prog in pointProg:
                 pointXY = list(circleUnionExtInt.exterior.interpolate(prog).xy)
                 if self.overlapping:
