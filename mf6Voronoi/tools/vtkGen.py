@@ -4,12 +4,19 @@ import sys
 import numpy as np
 import pyvista as pv
 from scipy.interpolate import griddata
+from mf6Voronoi.utils import isRunningInJupyter, printBannerHtml, printBannerText
 
 class Mf6VtkGenerator:
     def __init__(self, sim, vtkDir):
         self.sim = sim
         self.vtkDir = vtkDir
-    
+
+        #insert banner
+        if isRunningInJupyter():
+            printBannerHtml()
+        else:
+            printBannerText()
+
     def listModels(self):
         print("\n Models in simulation: %s"%self.sim.model_names)
         
@@ -17,27 +24,6 @@ class Mf6VtkGenerator:
         self.gwf = self.sim.get_model(modelName)
         self.packageList = self.gwf.get_package_list()
         print("Package list: %s"%self.packageList)
-    
-    # #utils
-    # def deleteAllFiles(self):
-    #     try:
-    #         # Check if the folder exists
-    #         if not os.path.exists(self.vtkDir):
-    #             os.mkdir(self.vtkDir)
-    #             print(f"Folder created: {file_path}")
-
-    #         # Iterate through all files in the folder and delete them
-    #         print(f"Check for files in '{self.vtkDir}'.")
-    #         for filename in os.listdir(self.vtkDir):
-    #             file_path = os.path.join(self.vtkDir, filename)
-    #             if os.path.isfile(file_path):
-    #                 os.remove(file_path)
-    #                 print(f"Deleted file: {file_path}")
-
-    #         print(f"\nAll files in '{self.vtkDir}' have been deleted.\n")
-
-    #     except Exception as e:
-    #         print(f"An error occurred: {str(e)}")
     
     def saveArray(self,outputDir, array, arrayName):
         if array is not None:

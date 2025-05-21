@@ -14,7 +14,9 @@ from collections import OrderedDict
 from .utils import (processVertexFilterCloseLimit, 
                     intersectLimitLayer, 
                     isMultiGeometry,
-                    printHeader)
+                    isRunningInJupyter, 
+                    printBannerHtml, 
+                    printBannerText)
 
 class createVoronoi():
     def __init__(self, meshName, maxRef, multiplier, overlapping=True):
@@ -180,7 +182,12 @@ class createVoronoi():
         partialCircleUnionList = []
         partialCircleUnionInteriorList = []    
 
-        printHeader() 
+		#insert banner
+        if isRunningInJupyter():
+            printBannerHtml()
+        else:
+            printBannerText()
+
 
         for layer, value in self.discLayers.items():
             cellSizeList = [value['layerRef']]

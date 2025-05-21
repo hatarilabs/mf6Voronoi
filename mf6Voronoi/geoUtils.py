@@ -4,29 +4,11 @@ from scipy.spatial import Voronoi
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Point
-#from .utils import add_to_map
-#from mf6.z3graphicsapp.utils import heads_to_map
+from .utils import readShpFromZip
 
-# from .models import (LimitLayer,
-#     RefinementLayerNumber,
-#     RefinementLayer,
-#     VoronoiMesh,
-#     Cell2d,
-#     VerticalLayerSetup,
-#     VerticalLayerByRaster,
-#     ModelArray)
-
-# from colour import Color
 
 # Select a colormap
 cmap = plt.cm.viridis
-
-def read_shp_from_zip(file):
-    zipshp = io.BytesIO(open(file, 'rb').read())
-    with fiona.BytesCollection(zipshp.read()) as src:
-        crs = src.crs
-        gdf = gpd.GeoDataFrame.from_features(src, crs=crs)
-    return gdf
          
 def plotOrgDistPoints(vorMesh):
   limitXY = vorMesh.modelDis['limitGeometry']
@@ -106,15 +88,15 @@ def bcGraph(self, ref_obj, ref_type, *args, **kwargs):
     limitLayer= LimitLayer.objects.get(project=project)
     meshLayer= VoronoiMesh.objects.get(project=project)
 
-    gdfLimit=read_shp_from_zip(limitLayer.limitFile.path)
-    gdfMesh=read_shp_from_zip(meshLayer.meshFile.path)
+    gdfLimit=readShpFromZip(limitLayer.limitFile.path)
+    gdfMesh=readShpFromZip(meshLayer.meshFile.path)
 
     if ref_type == "Recharge":
-        gdfRef=read_shp_from_zip(ref_obj.rchFile.path)
+        gdfRef=readShpFromZip(ref_obj.rchFile.path)
     elif ref_type == "Evapotranspiration":
-        gdfRef=read_shp_from_zip(ref_obj.evtFile.path)
+        gdfRef=readShpFromZip(ref_obj.evtFile.path)
     else:
-        gdfRef=read_shp_from_zip(ref_obj.refinementFile.path)
+        gdfRef=readShpFromZip(ref_obj.refinementFile.path)
 
     gdfRef['id'] = np.arange(0,gdfRef.shape[0])
 
@@ -173,7 +155,7 @@ def limitGraph(self, *args, **kwargs):
     project=self.getProject(self.request)
     limitLayer= LimitLayer.objects.get(project=project)
 
-    gdfLimit=read_shp_from_zip(limitLayer.limitFile.path)
+    gdfLimit=readShpFromZip(limitLayer.limitFile.path)
 
     meshmap = folium.Map(max_zoom=20)
 
@@ -210,11 +192,11 @@ def meshGraph(self,mesh_obj, *args, **kwargs):
     limitLayer= LimitLayer.objects.get(project=project)
     refinementLayers=RefinementLayer.objects.filter(project=project)
 
-    gdfLimit=read_shp_from_zip(limitLayer.limitFile.path)
+    gdfLimit=readShpFromZip(limitLayer.limitFile.path)
     gdfRefDict = {}
     for index, refinemet in enumerate(refinementLayers):
-        gdfRefDict[index] = read_shp_from_zip(refinementLayers[index].refinementFile.path)
-    gdfMesh = read_shp_from_zip(mesh_obj.meshFile.path)
+        gdfRefDict[index] = readShpFromZip(refinementLayers[index].refinementFile.path)
+    gdfMesh = readShpFromZip(mesh_obj.meshFile.path)
 
     meshmap = folium.Map(max_zoom=20)
 
@@ -291,11 +273,11 @@ def pointCloudGraph(self, meshForm, vorMesh, *args, **kwargs):
     vorMesh.getPointsAsShp('vertexBuffer',outVertexBufferPath)
     vorMesh.getPolyAsShp('interiors',outInteriorsPath)
 
-    gdfLimit=read_shp_from_zip(limitLayer.limitFile.path)
+    gdfLimit=readShpFromZip(limitLayer.limitFile.path)
     gdfRefDict = {}
     for index, refinemet in enumerate(refinementLayers):
-        gdfRefDict[index] = read_shp_from_zip(refinementLayers[index].refinementFile.path)
-    gdfMesh=read_shp_from_zip(meshForm.meshFile.path)
+        gdfRefDict[index] = readShpFromZip(refinementLayers[index].refinementFile.path)
+    gdfMesh=readShpFromZip(meshForm.meshFile.path)
 
     gdfPointCloud=gpd.read_file(outTempPointCloudPath)
     gdfCircleUnion=gpd.read_file(outCircleUnionPath)
@@ -383,11 +365,11 @@ def waterTableGraph(self, c_map, Line, *args, **kwargs):
     refinementLayers=RefinementLayer.objects.filter(project=project)
     meshLayer = VoronoiMesh.objects.get(project=project)
 
-    gdfLimit=read_shp_from_zip(limitLayer.limitFile.path)
+    gdfLimit=readShpFromZip(limitLayer.limitFile.path)
     gdfRefDict = {}
     for index, refinemet in enumerate(refinementLayers):
-        gdfRefDict[index] = read_shp_from_zip(refinementLayers[index].refinementFile.path)
-    gdfMesh = read_shp_from_zip(meshLayer.meshFile.path)
+        gdfRefDict[index] = readShpFromZip(refinementLayers[index].refinementFile.path)
+    gdfMesh = readShpFromZip(meshLayer.meshFile.path)
 
     meshmap = folium.Map(max_zoom=20)
 

@@ -41,3 +41,4 @@ htmlcov
 # Test modflow simulations
 **/modelFiles/
 **/vtk/
+**/output/
