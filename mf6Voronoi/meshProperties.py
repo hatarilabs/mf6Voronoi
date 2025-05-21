@@ -29,11 +29,12 @@ class meshShape:
 		        if var >= coordArray[interval] and var < coordArray[interval+1]:
 		            return interval
 		            break
-		#insert banner
-        if isRunningInJupyter():
-            printBannerHtml()
-        else:
-            printBannerText()
+
+		# #insert banner
+		# if isRunningInJupyter():
+		# 	printBannerHtml()
+		# else:
+		# 	printBannerText()
 
 		print('\nCreating a unique list of vertices [[x1,y1],[x2,y2],...]')
 		for index, row in enumerate(tqdm(vorMesh, total= len(vorMesh))):

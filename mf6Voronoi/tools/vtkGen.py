@@ -17,6 +17,10 @@ class Mf6VtkGenerator:
         else:
             printBannerText()
 
+        print('\n/---------------------------------------/')
+        print('\nThe Vtk generator engine has been started')
+        print('\n/---------------------------------------/')
+
     def listModels(self):
         print("\n Models in simulation: %s"%self.sim.model_names)
         
@@ -55,23 +59,34 @@ class Mf6VtkGenerator:
             flatIndex = np.ravel_multi_index(row.cellid,self.gwf.modelgrid.shape)
             flatIndexList.append(flatIndex)
         #empty object
-        
-        #loop over the cells
-        if not re.search('rch',bcon,re.IGNORECASE):
-            cropVtk = pv.UnstructuredGrid()
-            for index, cell in enumerate(flatIndexList):
-                tempVtk = self.vtkGeom.extract_cells(cell)
-                for name in bcObjSpdNames:
-                    tempVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name][index]
-                cropVtk += tempVtk
 
-                if index % 500 == 0:
-                    print('... %d cells generated'%index)
-                    #print(index, name, nper, bcObj.stress_period_data.data[nper][name][index])
-        else:
-            cropVtk = self.vtkGeom.extract_cells(flatIndexList)
-            for name in bcObjSpdNames:
-                cropVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name]
+        #loop over the cells
+        print('All files')        
+        print(self.vtkGeom.extract_cells(flatIndexList))
+        tempVtk = self.vtkGeom.extract_cells(flatIndexList)
+        for name in bcObjSpdNames:
+            tempVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name]
+        cropVtk = tempVtk
+
+        # #loop over the cells
+        # if not re.search('rch',bcon,re.IGNORECASE):
+        #     cropVtk = pv.UnstructuredGrid()
+        #     for index, cell in enumerate(flatIndexList):
+        #         tempVtk = self.vtkGeom.extract_cells(cell)
+        #         for name in bcObjSpdNames:
+        #             tempVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name][index]
+        #         cropVtk += tempVtk
+
+        #         if index % 500 == 0:
+        #             print('... %d cells generated'%index)
+        #             #print(index, name, nper, bcObj.stress_period_data.data[nper][name][index])
+        # else:
+        #     cropVtk = self.vtkGeom.extract_cells(flatIndexList)
+        #     for name in bcObjSpdNames:
+        #         cropVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name]
+
+        print('Listed files')
+        print(cropVtk)
                 
         #save and return
         cropVtk.save(os.path.join(self.vtkDir,bcon+'.vtk'))
@@ -92,12 +107,13 @@ class Mf6VtkGenerator:
             flatIndexList.append(flatIndex)
         #empty object
         cropVtk = pv.UnstructuredGrid()
-        #loop over the cells
+
         for index, cell in enumerate(flatIndexList):
             tempVtk = self.vtkGeom.extract_cells(cell)
             for name in obsObjNames:
                 tempVtk.cell_data[name] = np.array([obsObj.continuous.data[obsKey][name][index]])
             cropVtk += tempVtk
+
         #save and return
         cropVtk.save('../Vtk/%s.vtk'%obs)
         #return cropVtk
