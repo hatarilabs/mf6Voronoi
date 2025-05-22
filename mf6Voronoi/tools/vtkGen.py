@@ -52,7 +52,7 @@ class Mf6VtkGenerator:
             print('Working for %s package, creating the datasets: %s'%(bcon,bcObjSpdNames))
             #create a flat index
             flatIndexList = []
-            flatIndexTupleList = []
+            # flatIndexTupleList = []
 
             #get the first stress period that has the active bc
             bcKeys = list(bcObj.stress_period_data.data.keys())
@@ -64,41 +64,64 @@ class Mf6VtkGenerator:
                 for name in bcObjSpdNames:
                     tempVtkGeom.cell_data[name] = np.zeros(nCells)
 
-                for row in bcObj.stress_period_data.data[nper]:
-                    flatIndex = np.ravel_multi_index(row.cellid,self.gwf.modelgrid.shape) #works for dis and disv
-                    flatIndexList.append(flatIndex)
-                    flatIndexTupleList.append((flatIndex,row.cellid))
-                #extracting cells and applying values
-                #print('Len of flatIndexList: %d'%len(flatIndexList)) #for debuggin do not delete
-                #tempVtkGeom.cell_data['id'] = flatIndexList
-                #for name in bcObjSpdNames:
-                #    tempVtkGeom.cell_data['name'] = np.zeros(self.gwf.modelgrid.ncpl)
-                print(tempVtkGeom)
-                # tempVtk = self.vtkGeom.extract_cells(flatIndexList)
-                tempVtkFilter = tempVtkGeom.extract_cells(flatIndexList)
-                #tempVtk['id'] = flatIndexList
-                # print(flatIndexList[:10])
-                # print(tempVtk['id'][:10])
-                try:
-                    spdRecArray = bcObj.stress_period_data.data[nper]
-                    for name in bcObjSpdNames:
-                        for indexTuple in flatIndexTupleList:
-                            print(spdRecArray.cellid)
-                            flatIndex = np.ravel_multi_index(spdRecArray.cellid,self.gwf.modelgrid.shape)
-                            print(indexTuple[1])
-                            filterRow = spdRecArray[spdRecArray.cellid == indexTuple[1]]
-                            print(filterRow)
-                            tempVtkFilter[name][indexTuple[0]] = filterRow.name
+                try: 
+                    for row in bcObj.stress_period_data.data[nper]:
+                        #print(row.cellid)
+                        flatIndex = np.ravel_multi_index(row.cellid,self.gwf.modelgrid.shape) #works for dis and disv
+                        flatIndexList.append(flatIndex)
+                        # flatIndexTupleList.append((flatIndex,row.cellid))
+                    #extracting cells and applying values
+                    #print('Len of flatIndexList: %d'%len(flatIndexList)) #for debuggin do not delete
+                    #tempVtkGeom.cell_data['id'] = flatIndexList
+                    #for name in bcObjSpdNames:
+                    #    tempVtkGeom.cell_data['name'] = np.zeros(self.gwf.modelgrid.ncpl)
+                    # tempVtk = self.vtkGeom.extract_cells(flatIndexList)
+                    #tempVtkFilter = tempVtkGeom.extract_cells(flatIndexList)
+                    #tempVtk['id'] = flatIndexList
+                    # print(flatIndexList[:10])
+                    # print(tempVtk['id'][:10])
+                    
+                    bcSpdDf = bcObj.stress_period_data.dataframe[nper]
 
-                        print(bcObj.stress_period_data.data[nper])
-                        print(bcObj.stress_period_data.data[nper][name])
-                        # tempVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name]         
+                    # for indexTuple in flatIndexTupleList:
+
+
+                    for index, row in bcSpdDf.iterrows():
+                        print(row)
+                        if 'cellid_row' in bcSpdDf.columns:
+                            cellid = (int(row.cellid_layer), int(row.cellid_row), int(row.cellid_column))
+                        elif 'cellid_cell' in bcSpdDf.columns:
+                            cellid = (int(row.cellid_layer), int(row.cellid_cell))
+                        else:
+                            print('[Error] Something went wrong with cell indexing')
+
+                        flatIndex = np.ravel_multi_index(cellid,self.gwf.modelgrid.shape) 
+                        for name in bcObjSpdNames:
+                            if name != '':
+                                tempVtkGeom[name][flatIndex] = row[name]
+
+                    
+                    # for name in bcObjSpdNames:
+                    #     for indexTuple in flatIndexTupleList:
+                    #         print(spdRecArray.cellid)
+                    #         flatIndex = np.ravel_multi_index(spdRecArray.cellid,self.gwf.modelgrid.shape)
+                    #         print(indexTuple[1])
+                    #         filterRow = spdRecArray[spdRecArray.cellid == indexTuple[1]]
+                    #         print(filterRow)
+                    #         tempVtkFilter[name][indexTuple[0]] = filterRow.name
+
+                    #     print(bcObj.stress_period_data.data[nper])
+                    #     print(bcObj.stress_period_data.data[nper][name])
+                        # tempVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name]  
+                        # 
+                    tempVtkFilter = tempVtkGeom.extract_cells(flatIndexList) 
+                    tempVtkFilter.save(os.path.join(self.vtkDir,'%s_kper_%s.vtk'%(bcon,nper)))      
                 except KeyError:
-                    pass
-                tempVtkFilter.save(os.path.join(self.vtkDir,bcon+'.vtk'))
+                    print('[WARNING] There is no data for the required stress period')
+                
 
             except IndexError:
-                print('There is no data for the required stress period')
+                print('[WARNING] There is no data for the required stress period')
         else:
             bcObjBlkNames = bcObj.blocks['period'].datasets.keys()
             print('Working for %s package, creating the datasets: %s'%(bcon,bcObjBlkNames))
@@ -108,9 +131,9 @@ class Mf6VtkGenerator:
                     dataSet = bcObj.blocks['period'].datasets[name]
                     if dataSet.has_data():        
                         tempVtk.cell_data[name] = dataSet.get_data(nper).flatten()
-                tempVtk.save(os.path.join(self.vtkDir,bcon+'.vtk'))
+                tempVtk.save(os.path.join(self.vtkDir,'%s_kper_%s.vtk'%(bcon,nper)))
             except AttributeError:
-                print('There is no data for the required stress period')
+                print('[WARNING] There is no data for the required stress period')
         
 
         
