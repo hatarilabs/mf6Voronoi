@@ -2,12 +2,17 @@ import rasterio
 import geopandas as gpd
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
 
-def getLayCellElevTupleFromRaster(gwf,interIx,rasterPath,geomPath):
+def getLayCellElevTupleFromRaster(gwf,interIx,rasterPath,geomPath,restrictedSpd=None):
     rasterSrc = rasterio.open(rasterPath)
     geomSrc = gpd.read_file(geomPath)
     insideCellsIds = []
     layCellTupleList = []
     cellElevList = []
+    restrictedCellList = []
+
+    if restrictedSpd:
+        for cell in restrictedSpd:
+            restrictedCellList.append(cell[0][1])
 
     #model parameters
     nlay = gwf.modelgrid.nlay
@@ -21,7 +26,13 @@ def getLayCellElevTupleFromRaster(gwf,interIx,rasterPath,geomPath):
     for index, row in geomSrc.iterrows():
         tempCellIds = interIx.intersect(row.geometry).cellids
         for cell in tempCellIds:
-            insideCellsIds.append(cell)
+            if cell in restrictedCellList:
+                print('The following cell is repeated %d'%d)
+            else:
+                insideCellsIds.append(cell)
+    # print('Len of insideCellsIds before filtering %d'%len(insideCellsIds))
+    insideCellsIds = list(set(insideCellsIds))
+    # print('Len of insideCellsIds after filtering %d'%len(insideCellsIds))
 
     #working with the cell elevations and create laycell tuples
     for cell in insideCellsIds:

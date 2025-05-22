@@ -46,51 +46,73 @@ class Mf6VtkGenerator:
     @timing_decorator
     def exportBc(self,bcon,nper):
         #open package and filter names
-        bcObj = self.gwf.get_package(bcon)  
-        bcObjSpdNames = bcObj.stress_period_data.dtype.names[1:]
-        print('Working for %s package, creating the datasets: %s'%(bcon,bcObjSpdNames))
-        #create a flat index
-        flatIndexList = []
-        #get the first stress period that has the active bc
-        bcKeys = list(bcObj.stress_period_data.data.keys())
-        for row in bcObj.stress_period_data.data[bcKeys[nper]]:
-            # print(row.cellid)
-            # print(self.gwf.modelgrid.shape)
-            flatIndex = np.ravel_multi_index(row.cellid,self.gwf.modelgrid.shape)
-            flatIndexList.append(flatIndex)
-        #empty object
+        bcObj = self.gwf.get_package(bcon)
+        if bcObj.has_stress_period_data: 
+            bcObjSpdNames = bcObj.stress_period_data.dtype.names[1:]
+            print('Working for %s package, creating the datasets: %s'%(bcon,bcObjSpdNames))
+            #create a flat index
+            flatIndexList = []
+            flatIndexTupleList = []
 
-        #loop over the cells
-        print('All files')        
-        print(self.vtkGeom.extract_cells(flatIndexList))
-        tempVtk = self.vtkGeom.extract_cells(flatIndexList)
-        for name in bcObjSpdNames:
-            tempVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name]
-        cropVtk = tempVtk
+            #get the first stress period that has the active bc
+            bcKeys = list(bcObj.stress_period_data.data.keys())
+            
+            try:
+                tempVtkGeom = self.vtkGeom.copy()
+                nCells = tempVtkGeom.n_cells
+                tempVtkGeom.cell_data['cell_id'] = np.arange(nCells)
+                for name in bcObjSpdNames:
+                    tempVtkGeom.cell_data[name] = np.zeros(nCells)
 
-        # #loop over the cells
-        # if not re.search('rch',bcon,re.IGNORECASE):
-        #     cropVtk = pv.UnstructuredGrid()
-        #     for index, cell in enumerate(flatIndexList):
-        #         tempVtk = self.vtkGeom.extract_cells(cell)
-        #         for name in bcObjSpdNames:
-        #             tempVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name][index]
-        #         cropVtk += tempVtk
+                for row in bcObj.stress_period_data.data[nper]:
+                    flatIndex = np.ravel_multi_index(row.cellid,self.gwf.modelgrid.shape) #works for dis and disv
+                    flatIndexList.append(flatIndex)
+                    flatIndexTupleList.append((flatIndex,row.cellid))
+                #extracting cells and applying values
+                #print('Len of flatIndexList: %d'%len(flatIndexList)) #for debuggin do not delete
+                #tempVtkGeom.cell_data['id'] = flatIndexList
+                #for name in bcObjSpdNames:
+                #    tempVtkGeom.cell_data['name'] = np.zeros(self.gwf.modelgrid.ncpl)
+                print(tempVtkGeom)
+                # tempVtk = self.vtkGeom.extract_cells(flatIndexList)
+                tempVtkFilter = tempVtkGeom.extract_cells(flatIndexList)
+                #tempVtk['id'] = flatIndexList
+                # print(flatIndexList[:10])
+                # print(tempVtk['id'][:10])
+                try:
+                    spdRecArray = bcObj.stress_period_data.data[nper]
+                    for name in bcObjSpdNames:
+                        for indexTuple in flatIndexTupleList:
+                            print(spdRecArray.cellid)
+                            flatIndex = np.ravel_multi_index(spdRecArray.cellid,self.gwf.modelgrid.shape)
+                            print(indexTuple[1])
+                            filterRow = spdRecArray[spdRecArray.cellid == indexTuple[1]]
+                            print(filterRow)
+                            tempVtkFilter[name][indexTuple[0]] = filterRow.name
 
-        #         if index % 500 == 0:
-        #             print('... %d cells generated'%index)
-        #             #print(index, name, nper, bcObj.stress_period_data.data[nper][name][index])
-        # else:
-        #     cropVtk = self.vtkGeom.extract_cells(flatIndexList)
-        #     for name in bcObjSpdNames:
-        #         cropVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name]
+                        print(bcObj.stress_period_data.data[nper])
+                        print(bcObj.stress_period_data.data[nper][name])
+                        # tempVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name]         
+                except KeyError:
+                    pass
+                tempVtkFilter.save(os.path.join(self.vtkDir,bcon+'.vtk'))
 
-        print('Listed files')
-        print(cropVtk)
-                
-        #save and return
-        cropVtk.save(os.path.join(self.vtkDir,bcon+'.vtk'))
-        #return cropVtk
+            except IndexError:
+                print('There is no data for the required stress period')
+        else:
+            bcObjBlkNames = bcObj.blocks['period'].datasets.keys()
+            print('Working for %s package, creating the datasets: %s'%(bcon,bcObjBlkNames))
+            tempVtk = self.vtkGeom.extract_cells(range(self.gwf.modelgrid.ncpl))
+            try:
+                for name in bcObjBlkNames:
+                    dataSet = bcObj.blocks['period'].datasets[name]
+                    if dataSet.has_data():        
+                        tempVtk.cell_data[name] = dataSet.get_data(nper).flatten()
+                tempVtk.save(os.path.join(self.vtkDir,bcon+'.vtk'))
+            except AttributeError:
+                print('There is no data for the required stress period')
+        
+
         
     @timing_decorator
     def exportObs(self,obs):
@@ -99,7 +121,7 @@ class Mf6VtkGenerator:
         obsKey = list(obsObj.continuous.data.keys())[0]
         obsObjNames = obsObj.continuous.data[obsKey].dtype.names[:2]
         bcObjArray = obsObj.continuous.data[obsKey].id
-        print(bcObjArray)
+        
         #create a flat index
         flatIndexList = []
         for cell in bcObjArray:
@@ -189,10 +211,9 @@ class Mf6VtkGenerator:
         obsList = [x for x in self.packageList if re.fullmatch('obs',x,re.IGNORECASE)]
         #print(bcList)
         for bc in bcList:
-            print(bc)
-            if bc[3]!='A':
-                self.exportBc(bc, nper)
-                print("%s vtk generated"%bc)
+            print('\n/--------%s vtk generation-------/'%bc)
+            self.exportBc(bc, nper)
+            print('/--------%s vtk generated-------/\n'%bc)
         for obs in obsList:
             self.exportObs(obs)
             print("%s btk generated"%obs)
