@@ -2,6 +2,7 @@ import os, re, time
 import flopy
 import sys
 import numpy as np
+import pandas as pd
 import pyvista as pv
 from scipy.interpolate import griddata
 from mf6Voronoi.utils import isRunningInJupyter, printBannerHtml, printBannerText
@@ -69,51 +70,33 @@ class Mf6VtkGenerator:
                         #print(row.cellid)
                         flatIndex = np.ravel_multi_index(row.cellid,self.gwf.modelgrid.shape) #works for dis and disv
                         flatIndexList.append(flatIndex)
-                        # flatIndexTupleList.append((flatIndex,row.cellid))
-                    #extracting cells and applying values
-                    #print('Len of flatIndexList: %d'%len(flatIndexList)) #for debuggin do not delete
-                    #tempVtkGeom.cell_data['id'] = flatIndexList
-                    #for name in bcObjSpdNames:
-                    #    tempVtkGeom.cell_data['name'] = np.zeros(self.gwf.modelgrid.ncpl)
-                    # tempVtk = self.vtkGeom.extract_cells(flatIndexList)
-                    #tempVtkFilter = tempVtkGeom.extract_cells(flatIndexList)
-                    #tempVtk['id'] = flatIndexList
-                    # print(flatIndexList[:10])
-                    # print(tempVtk['id'][:10])
                     
-                    bcSpdDf = bcObj.stress_period_data.dataframe[nper]
-
-                    # for indexTuple in flatIndexTupleList:
-
+                    #working with EVT that has no dataframe option
+                    try:
+                        bcSpdDf = bcObj.stress_period_data.dataframe[nper]
+                    except AttributeError:
+                        auxRec = bcObj.stress_period_data.get_data(nper)
+                        bcSpdDf = pd.DataFrame.from_records(auxRec)
 
                     for index, row in bcSpdDf.iterrows():
-                        print(row)
                         if 'cellid_row' in bcSpdDf.columns:
                             cellid = (int(row.cellid_layer), int(row.cellid_row), int(row.cellid_column))
                         elif 'cellid_cell' in bcSpdDf.columns:
                             cellid = (int(row.cellid_layer), int(row.cellid_cell))
+                        elif 'cellid' in bcSpdDf.columns:
+                            cellid = row.cellid
                         else:
                             print('[Error] Something went wrong with cell indexing')
 
                         flatIndex = np.ravel_multi_index(cellid,self.gwf.modelgrid.shape) 
                         for name in bcObjSpdNames:
                             if name != '':
-                                tempVtkGeom[name][flatIndex] = row[name]
+                                if not isinstance(row[name],str):
+                                    tempVtkGeom[name][flatIndex] = row[name]
+                                else:
+                                    pass
+                                    #print('[WARNING] The following dataset %s is a string and will be filled by zeros'%name)
 
-                    
-                    # for name in bcObjSpdNames:
-                    #     for indexTuple in flatIndexTupleList:
-                    #         print(spdRecArray.cellid)
-                    #         flatIndex = np.ravel_multi_index(spdRecArray.cellid,self.gwf.modelgrid.shape)
-                    #         print(indexTuple[1])
-                    #         filterRow = spdRecArray[spdRecArray.cellid == indexTuple[1]]
-                    #         print(filterRow)
-                    #         tempVtkFilter[name][indexTuple[0]] = filterRow.name
-
-                    #     print(bcObj.stress_period_data.data[nper])
-                    #     print(bcObj.stress_period_data.data[nper][name])
-                        # tempVtk.cell_data[name] = bcObj.stress_period_data.data[nper][name]  
-                        # 
                     tempVtkFilter = tempVtkGeom.extract_cells(flatIndexList) 
                     tempVtkFilter.save(os.path.join(self.vtkDir,'%s_kper_%s.vtk'%(bcon,nper)))      
                 except KeyError:
@@ -122,6 +105,8 @@ class Mf6VtkGenerator:
 
             except IndexError:
                 print('[WARNING] There is no data for the required stress period')
+        elif 'TS' in bcon:
+            print('[WARNING] This boundary condition %s is a time series and wont be considered'%bcon)
         else:
             bcObjBlkNames = bcObj.blocks['period'].datasets.keys()
             print('Working for %s package, creating the datasets: %s'%(bcon,bcObjBlkNames))
@@ -259,7 +244,7 @@ class Mf6VtkGenerator:
 
         # geomVtk = geomVtk.threshold(value=(1,1), scalars="heads")
         # geomVtk = geomVtk.cell_data_to_point_data()
-        geomVtk.save(os.path.join(self.vtkDir,'waterHeads.vtk'))
+        geomVtk.save(os.path.join(self.vtkDir,'waterHeads_kper_%s.vtk'%nper))
 
     def generateWaterTableVtk(self, nper):
         headObj = self.gwf.output.head()
@@ -302,4 +287,4 @@ class Mf6VtkGenerator:
         mesh.cell_data['waterTable'] = waterTable
 
         mesh = mesh.cell_data_to_point_data()
-        mesh.save(os.path.join(self.vtkDir,'waterTable.vtk'))
+        mesh.save(os.path.join(self.vtkDir,'waterTable_kper_%d.vtk'%nper))
