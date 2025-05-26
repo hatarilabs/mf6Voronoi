@@ -1,0 +1,24 @@
+#List required packages
+pip list | grep mf6Voronoi
+
+#Uninstall package
+pip uninstall mf6Voronoi --break-system-packages
+sudo apt remove python3-mf6voronoi
+
+#Install package locally
+pip install -e .
+
+
+### To upload to Pypi
+
+Modify the version in pyproject.toml
+
+Delete dist folder and *.egg.info 
+rm -rf dist & rm -rf *.egg-info
+
+Build a package
+python3 -m build
+
+upload
+twine upload dist/*
+~/.local/bin/twine upload dist/*

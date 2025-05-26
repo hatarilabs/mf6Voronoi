@@ -37,3 +37,8 @@ htmlcov
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Test modflow simulations
+**/modelFiles/
+**/vtk/
+**/output/

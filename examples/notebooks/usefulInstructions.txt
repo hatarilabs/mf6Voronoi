@@ -1,8 +1,0 @@
-#List required packages
-pip list | grep mf6Voronoi
-
-#Uninstall package
-pip uninstall mf6Voronoi
-
-#Install package locally
-pip install -e .
