@@ -1,0 +1,33 @@
+# OBS: Observation Utility file created on 5/22/2025 by ModelMuse version 5.3.1.0.
+BEGIN OPTIONS
+    DIGITS     10
+    PRINT_INPUT
+END OPTIONS
+
+BEGIN CONTINUOUS FILEOUT HillslopeModel_v1.ob_gw_out_head.csv
+  'hd_Obs_474820122185601' head     7   164    42
+  'hd_Obs_474851122165301' head     4   158    50
+  'hd_Obs_474907122194901' head     6   166    31
+  'hd_Obs_474909122164401' head     5   152    50
+  'hd_Obs_474923122195601' head     6   162    29
+  'hd_Obs_474953122170201' head     5   141    46
+  'hd_Obs_475016122172301' head     4   136    43
+  'hd_Obs_475044122155601' head     6   121    50
+  'hd_Obs_475104122191901' head     6   130    25
+  'hd_Obs_475106122170101' head     4   120    42
+  'hd_Obs_475106122172201' head     4   121    40
+  'hd_Obs_475120122162401' head     4   113    45
+  'hd_Obs_475150122192101' head     7   116    20
+  'hd_Obs_475258122164201' head     2    85    38
+  'hd_Obs_475300122164401' head     2    85    38
+  'hd_Obs_475307122153701' head     3    79    44
+  'hd_Obs_475309122153601' head     3    78    44
+  'hd_Obs_475328122181901' head     9    84    22
+  'hd_Obs_475334122180401' head     9    81    25
+  'hd_Obs_475349122162901' head     2    70    37
+  'hd_Obs_475407122144101' head     2    57    47
+  'hd_Obs_475453122170701' head     2    54    28
+  'hd_Obs_475518122162201' head     2    44    33
+  'hd_Obs_475541122151101' head     4    32    39
+END CONTINUOUS
+

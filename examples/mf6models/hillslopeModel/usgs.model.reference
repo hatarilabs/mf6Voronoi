@@ -1,0 +1,9 @@
+xul  5.524899723971E+005 
+yul  5.312989496592E+006 
+rotation -1.900000000000E+001 
+length_units meters
+time_units seconds
+start_date 1/1/2000
+start_time 0:0:0
+model MODFLOW 6
+epsg 32610

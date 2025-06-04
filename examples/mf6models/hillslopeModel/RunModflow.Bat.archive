@@ -1,0 +1,4 @@
+if not exist "..\..\output\NUL" mkdir "..\..\output"
+if not exist "..\..\output\output.HillslopeModel_v1\NUL" mkdir "..\..\output\output.HillslopeModel_v1"
+..\..\bin\mf6.exe
+pause

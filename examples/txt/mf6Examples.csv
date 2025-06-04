@@ -1,5 +1,6 @@
-Example,Simulation,Namefile(s),Grid Dimensions,Packages,testedVtk,description
+Example,Simulation,Namefile(s),Grid Dimensions,Packages,testedVtk,testedVector,description
 1, ex-gwf-twri01, ex-gwf-twri01.nam,(5-15-15),CHD DIS DRN IC IMS NPF OC RCHA TDIS WEL,OK,all ok
 2, ex-gwf-bcf2ss-p01a, ex-gwf-bcf2ss.nam, (2-10-15),  DIS IC IMS NPF OC RCHA RIV TDIS WEL,OK,all ok
-3, ex-gwf-toth, toth.nam, (200, 1, 100), CHD DIS IC IMS NPF OC TDIS,OK,all ok
-4, ex-gwf-advtidal, ex-gwf-advtidal.nam, (3, 15, 10), DIS EVT GHB IC IMS NPF OBS OC RCH RIV STO TDIS TS WEL,OK,doesnt work on TS
+3, ex-gwf-toth, toth.nam, (200-1-100), CHD DIS IC IMS NPF OC TDIS,OK,all ok
+4, ex-gwf-advtidal, ex-gwf-advtidal.nam, (3-15-10), DIS EVT GHB IC IMS NPF OBS OC RCH RIV STO TDIS TS WEL,OK,doesnt work on TS
+5, ex-gwf-fhb, ex-gwf-fhb.nam, (1-3-10),  CHD DIS IC IMS NPF OBS OC STO TDIS TS WELOK,doesnt work on TS

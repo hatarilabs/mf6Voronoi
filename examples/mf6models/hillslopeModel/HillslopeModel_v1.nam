@@ -1,0 +1,19 @@
+# Name File for MODFLOW created on 5/22/2025 by ModelMuse Version 5.3.1.0
+BEGIN OPTIONS
+  LIST HillslopeModel_v1.lst
+  NEWTON UNDER_RELAXATION
+  PRINT_INPUT
+  SAVE_FLOWS
+END OPTIONS
+
+BEGIN PACKAGES
+  DIS6         HillslopeModel_v1.dis  DIS
+  IC6          HillslopeModel_v1.ic  IC
+  NPF6         HillslopeModel_v1.npf  NPF
+  OBS6         HillslopeModel_v1.ob_gw
+  OC6          HillslopeModel_v1.oc  OC
+  GHB6         HillslopeModel_v1.ghb  GHB-1
+  DRN6         HillslopeModel_v1.drn  DRN-1
+  RCH6         HillslopeModel_v1.rch  RCH-1
+  EVT6         HillslopeModel_v1.evt  EVT-1
+END PACKAGES

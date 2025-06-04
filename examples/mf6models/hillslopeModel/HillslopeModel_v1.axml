@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Model_Archive_List>
+  <bin Model_Name="HillslopeModel_v1" FileType="bin">
+    <FileName Model_Name="HillslopeModel_v1" FileType="bin">..\..\..\..\..\WRDAPP\mf6.6.0_win64\bin\mf6.exe</FileName>
+  </bin>
+  <ancillary Model_Name="HillslopeModel_v1" FileType="ancillary">
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">HillslopeModel_v1.gpt</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\groundwaterModelingHillslope\Shp\HobDf_10N.dbf</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\groundwaterModelingHillslope\Shp\HobDf_10N.prj</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\groundwaterModelingHillslope\Shp\HobDf_10N.shp</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\groundwaterModelingHillslope\Shp\HobDf_10N.shx</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\howToInsertObservationPointsMf6\Shp\HobDf_10N.dbf</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\howToInsertObservationPointsMf6\Shp\HobDf_10N.prj</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\howToInsertObservationPointsMf6\Shp\HobDf_10N.shp</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\howToInsertObservationPointsMf6\Shp\HobDf_10N.shx</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Rst\dem10m_10N_v1a.grd</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\HobDf_10N.dbf</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\HobDf_10N.prj</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\HobDf_10N.shp</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\HobDf_10N.shx</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\modelAoi.dbf</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\modelAoi.prj</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\modelAoi.shp</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\modelAoi.shx</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\Sea_Ghb_v1b.dbf</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\Sea_Ghb_v1b.prj</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\Sea_Ghb_v1b.shp</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\Sea_Ghb_v1b.shx</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\Streams_Aoi_Drn_v1a.dbf</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\Streams_Aoi_Drn_v1a.prj</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\Streams_Aoi_Drn_v1a.shp</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="ancillary">..\..\modelingTunelsHighTemporalDiscretizationMODFLOWFlopy\Shp\Streams_Aoi_Drn_v1a.shx</FileName>
+  </ancillary>
+  <model Model_Name="HillslopeModel_v1" FileType="Model Input">
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.dis</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.drn</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.evt</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.ghb</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.gsf</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.ic</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.ims</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.nam.archive</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.npf</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.ob_gw</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.oc</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.rch</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">HillslopeModel_v1.tdis</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">mfsim.nam</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">RunModflow.Bat.archive</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Input">usgs.HillslopeModel_v1.reference</FileName>
+  </model>
+  <output Model_Name="HillslopeModel_v1" FileType="Model Output">
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Output">HillslopeModel_v1.bhd</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Output">HillslopeModel_v1.cbc</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Output">HillslopeModel_v1.dis.grb</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Output">HillslopeModel_v1.InnerSolution.CSV</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Output">HillslopeModel_v1.lst</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Output">HillslopeModel_v1.ob_gw_out_head.csv</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Output">HillslopeModel_v1.OuterSolution.CSV</FileName>
+    <FileName Model_Name="HillslopeModel_v1" FileType="Model Output">mfsim.lst</FileName>
+  </output>
+</Model_Archive_List>

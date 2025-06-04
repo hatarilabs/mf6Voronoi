@@ -1,0 +1,12 @@
+# Output Control file created on 5/22/2025 by ModelMuse version 5.3.1.0.
+BEGIN OPTIONS
+  BUDGET FILEOUT 'HillslopeModel_v1.cbc'
+  HEAD FILEOUT 'HillslopeModel_v1.bhd'
+END OPTIONS
+
+BEGIN PERIOD      1
+  SAVE HEAD ALL
+  PRINT BUDGET ALL
+  SAVE BUDGET ALL
+END PERIOD 
+
