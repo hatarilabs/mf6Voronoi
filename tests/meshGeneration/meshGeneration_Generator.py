@@ -1,54 +1,64 @@
 from mf6Voronoi.geoVoronoi import createVoronoi
 from mf6Voronoi.utils import getVoronoiAsShp
+import matplotlib.pyplot as plt
+import geopandas as gpd
 import os, json
 
-with open('meshGenerationDict') as jsonFile:
+with open('meshGenerationData.json') as jsonFile:
     meshGenerationDict = json.load(jsonFile)
-
-for meshName, meshDict in meshGenerationDict.values:
+    
+for meshName, meshDict in meshGenerationDict.items():
     #Create mesh object specifying the coarse mesh and the multiplier
     vorMesh = createVoronoi(meshName=meshName,maxRef = meshDict["maxRef"], multiplier=meshDict["multiplier"])
 
-    datasetPath = os.path.join('../../examples/datasets',meshName)
+    datasetPath = os.path.join('../../examples/datasets',meshName,'shp')
 
     #Open limit layers and refinement definition layers
-    vorMesh.addLimit(meshDict["limitLayer"]["limitName"], os.path.join(datasetPath,meshDict["limitLayer"]["limitShp"]))
+    vorMesh.addLimit(meshDict["limitLayer"]["limitName"], os.path.join(datasetPath,meshDict["limitLayer"]["limitShape"]))
 
     for layerList in  meshDict["layerLayer"]:
         vorMesh.addLayer(layerList[0],os.path.join(datasetPath,layerList[1]),layerList[2])
 
-#Generate point pair array
-vorMesh.generateOrgDistVertices()
+    #Generate point pair array
+    vorMesh.generateOrgDistVertices()
 
-#Generate the point cloud and voronoi
-vorMesh.createPointCloud()
-vorMesh.generateVoronoi()
+    #Generate the point cloud and voronoi
+    vorMesh.createPointCloud()
+    vorMesh.generateVoronoi()
 
-# Export generated voronoi mesh
-getVoronoiAsShp(vorMesh.modelDis, shapePath='output/'+vorMesh.modelDis['meshName']+'.shp')
+    # Export generated voronoi mesh
+    shapePath='../checkFiles/meshGeneration/shp/'+meshName+'.shp'
+    getVoronoiAsShp(vorMesh.modelDis, shapePath=shapePath)
 
-#check mesh generation
-from mf6Voronoi.meshProperties import meshShape
-import os
+    #check mesh generation
+    from mf6Voronoi.meshProperties import meshShape
+    import os
 
-# open the mesh file
-mesh=meshShape('output/'+vorMesh.modelDis['meshName']+'.shp')
+    # open the mesh file
+    mesh=meshShape(shapePath)
 
-# get the list of vertices and cell2d data
-gridprops=mesh.get_gridprops_disv()
+    # get the list of vertices and cell2d data
+    gridprops=mesh.get_gridprops_disv()
 
-cell2d = gridprops['cell2d']           #cellid, cell centroid xy, vertex number and vertex id list
-vertices = gridprops['vertices']       #vertex id and xy coordinates
-ncpl = gridprops['ncpl']               #number of cells per layer
-nvert = gridprops['nvert']             #number of verts
-centroids=gridprops['centroids']
+    cell2d = gridprops['cell2d']           #cellid, cell centroid xy, vertex number and vertex id list
+    vertices = gridprops['vertices']       #vertex id and xy coordinates
+    ncpl = gridprops['ncpl']               #number of cells per layer
+    nvert = gridprops['nvert']             #number of verts
+    centroids=gridprops['centroids']
+        
+    mesh.save_properties(os.path.join('../checkFiles/meshGeneration/json','%s_disvDict.json'%meshName))
 
-#check or create an output folder
-jsonPath = ('output/'+vorMesh.modelDis['meshName'])
-if os.path.isdir(jsonPath):
-    print('The output folder %s exists'%jsonPath)
-else:
-    os.mkdir(jsonPath)
-    print('The output folder %s has been generated.'%jsonPath)
-    
-mesh.save_properties(os.path.join('../checkFiles/meshGeneration/json','%s_disvDict.json'%meshName))
+    # Load the shapefile (replace 'your_shapefile.shp' with the path to your file)
+    gdf = gpd.read_file(shapePath)
+
+    # Create a plot
+    fig, ax = plt.subplots(figsize=(10, 10))
+    gdf.plot(ax=ax)
+
+    # Remove axis for cleaner image (optional)
+    ax.set_axis_off()
+
+    # Save the figure as a PNG
+    plt.savefig("../checkFiles/meshGeneration/png/%s.png"%meshName, bbox_inches="tight", dpi=300)
+
+    plt.close()

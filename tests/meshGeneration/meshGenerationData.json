@@ -1,0 +1,142 @@
+{
+    "openPitInflows": {
+        "maxRef": 250,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "catchment.shp"
+        },
+        "layerLayer": [
+            [
+                "river",
+                "river_basin.shp",
+                50
+            ],
+            [
+                "pit",
+                "minePlan/pitShell.shp",
+                50
+            ]
+        ]
+    },
+    "regionalModel": {
+        "maxRef": 200,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "catchment.shp"
+        },
+        "layerLayer": [
+            [
+                "river",
+                "river_basin.shp",
+                50
+            ]
+        ]
+    },
+    "riverAquifer": {
+        "maxRef": 100,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "ModelLimit1.shp"
+        },
+        "layerLayer": [
+            [
+                "ghb",
+                "ModelGHB1.shp",
+                20
+            ],
+            [
+                "riv",
+                "ModelRiver2.shp",
+                10
+            ],
+            [
+                "wel",
+                "ModelWell2.shp",
+                2
+            ]
+        ]
+    },
+    "siteDewatering": {
+        "maxRef": 10,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "modelAoi2.shp"
+        },
+        "layerLayer": [
+            [
+                "ghb",
+                "modelGhb.sh",
+                2
+            ],
+            [
+                "drn",
+                "drains.shp",
+                1
+            ],
+            [
+                "wel",
+                "pointWell.shp",
+                1
+            ]
+        ]
+    },
+    "stibniteMine": {
+        "maxRef": 500,
+        "multiplier": 2.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "catchment_11N.shp"
+        },
+        "layerLayer": [
+            [
+                "water",
+                "river_basin_11N.shp",
+                20
+            ],
+            [
+                "pit",
+                "minePits_11N.shp",
+                50
+            ],
+            [
+                "dump",
+                "mineDumps_11N.shp",
+                50
+            ],
+            [
+                "faults",
+                "faults.shp",
+                5
+            ]
+        ]
+    },
+    "trenchExcavation": {
+        "maxRef": 50,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "modelAoi.shp"
+        },
+        "layerLayer": [
+            [
+                "ghb",
+                "compoundGhb.shp",
+                20
+            ],
+            [
+                "wel",
+                "pumpingWells.shp",
+                5
+            ],
+            [
+                "drn",
+                "trenchExcavationDissolved.shp",
+                2
+            ]
+        ]
+    }
+}
