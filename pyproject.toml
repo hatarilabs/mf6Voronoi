@@ -10,7 +10,7 @@ authors = [
     {name = "Saul Montoya", email = "saulmontoya@hatarilabs.com"}
 ]
 keywords = ["MODFLOW", "groundwater", "hydrogeology"]
-license = {text = "CC0"}
+license = "MIT"
 requires-python = ">=3.9"
 dependencies = [
     "fiona >= 1.9.6",
