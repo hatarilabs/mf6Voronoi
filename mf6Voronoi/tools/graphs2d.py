@@ -92,6 +92,8 @@ def FlowVectorGenerator(gwf, backgroundImageDict=None,
             if backgroundImageDict != None:
                 image = ax.imshow(bcgImg, extent=(left, right, bottom, top),
                                   zorder=0, alpha=0.7)
+                
+            return fig
 
 
         except AttributeError:
@@ -105,5 +107,4 @@ def FlowVectorGenerator(gwf, backgroundImageDict=None,
     else:
         print("No Dis file was found")
 
-    budget = gwf.output.budget()
-    budgetData = budget.get_data(kstpkper=kstpkper)
+    

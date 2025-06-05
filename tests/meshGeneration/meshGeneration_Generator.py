@@ -53,7 +53,7 @@ for meshName, meshDict in meshGenerationDict.items():
 
     # Create a plot
     fig, ax = plt.subplots(figsize=(10, 10))
-    gdf.plot(ax=ax)
+    gdf.plot(figsize=(35,25), fc='crimson', alpha=0.3, ec='teal', ax=ax)
 
     # Remove axis for cleaner image (optional)
     ax.set_axis_off()

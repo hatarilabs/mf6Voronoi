@@ -1,0 +1,37 @@
+{
+    "ex-gwf-advtidal": {
+        "gwfname": "ex-gwf-advtidal",
+        "backgroundImage": false,
+        "layer": 1
+    },
+    "ex-gwf-bcf2ss": {
+        "gwfname": "ex-gwf-bcf2ss",
+        "backgroundImage": false,
+        "layer": 1
+    },
+    "ex-gwf-fhb": {
+        "gwfname": "ex-gwf-fhb",
+        "backgroundImage": false,
+        "layer": 0
+    },
+    "ex-gwf-twri01": {
+        "gwfname": "ex-gwf-twri01",
+        "backgroundImage": false,
+        "layer": 0
+    },
+    "hillslopeModel": {
+        "gwfname": "modflow",
+        "backgroundImage": true,
+        "layer": 4
+    },
+    "openPitInflows": {
+        "gwfname": "mf6model",
+        "backgroundImage": true,
+        "layer": 8
+    },
+    "regionalModel": {
+        "gwfname": "mf6model",
+        "backgroundImage": true,
+        "layer": 3
+    }
+}
