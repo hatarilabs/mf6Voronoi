@@ -1,37 +1,23 @@
 {
     "ex-gwf-advtidal": {
-        "gwfname": "ex-gwf-advtidal",
-        "backgroundImage": false,
-        "layer": 1
+        "gwfname": "ex-gwf-advtidal"
     },
     "ex-gwf-bcf2ss": {
-        "gwfname": "ex-gwf-bcf2ss",
-        "backgroundImage": false,
-        "layer": 1
+        "gwfname": "ex-gwf-bcf2ss"
     },
     "ex-gwf-fhb": {
-        "gwfname": "ex-gwf-fhb",
-        "backgroundImage": false,
-        "layer": 0
+        "gwfname": "ex-gwf-fhb"
     },
     "ex-gwf-twri01": {
-        "gwfname": "ex-gwf-twri01",
-        "backgroundImage": false,
-        "layer": 0
+        "gwfname": "ex-gwf-twri01"
     },
     "hillslopeModel": {
-        "gwfname": "modflow",
-        "backgroundImage": true,
-        "layer": 4
+        "gwfname": "modflow"
     },
     "openPitInflows": {
-        "gwfname": "mf6model",
-        "backgroundImage": true,
-        "layer": 8
+        "gwfname": "mf6model"
     },
     "regionalModel": {
-        "gwfname": "mf6model",
-        "backgroundImage": true,
-        "layer": 3
+        "gwfname": "mf6model"
     }
 }
