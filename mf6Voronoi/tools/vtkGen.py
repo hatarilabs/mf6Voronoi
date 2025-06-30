@@ -226,9 +226,9 @@ class Mf6VtkGenerator:
             self.exportObs(obs)
             print("%s btk generated"%obs)
 
-    def generateHeadVtk(self, nper, crop=False):
+    def generateHeadVtk(self, nper, nstp=0, crop=False):
         headObj = self.gwf.output.head()
-        heads = headObj.get_data(kstpkper=(0,nper))
+        heads = headObj.get_data(kstpkper=(nstp,nper))
         waterTable = flopy.utils.postprocessing.get_water_table(heads).flatten()
 
         geomVtk = pv.read(self.geomPath)
@@ -246,9 +246,9 @@ class Mf6VtkGenerator:
         # geomVtk = geomVtk.cell_data_to_point_data()
         geomVtk.save(os.path.join(self.vtkDir,'waterHeads_kper_%s.vtk'%nper))
 
-    def generateWaterTableVtk(self, nper):
+    def generateWaterTableVtk(self, nper, nstp=0):
         headObj = self.gwf.output.head()
-        heads = headObj.get_data(kstpkper=(0,nper))
+        heads = headObj.get_data(kstpkper=(nstp,nper))
         waterTable = flopy.utils.postprocessing.get_water_table(heads).flatten()
 
         grid = self.gwf.modelgrid

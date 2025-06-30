@@ -7,6 +7,15 @@ import pyvista as pv
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
+from typing import Union
+
+import rasterio
+from rasterio.transform import from_origin
+from rasterio.mask import mask
+import geopandas as gpd
+from skimage import measure
+from shapely.geometry import box, Polygon, LineString
+
 from scipy.interpolate import griddata
 from mf6Voronoi.utils import isRunningInJupyter, printBannerHtml, printBannerText
 
@@ -130,4 +139,171 @@ def FlowVectorGenerator(gwf, backgroundImageDict=None,
     else:
         print("No Dis file was found")
 
-    
+def numpyInterpolation(gwf, headArray, rasterRes):
+    xArray = gwf.modelgrid.xcellcenters
+    yArray = gwf.modelgrid.ycellcenters
+    points = list(zip(xArray,yArray))
+
+    xMin, xMax, yMin, yMax = gwf.modelgrid.extent
+
+    xDim = xMax - xMin
+    yDim = yMax - yMin
+
+    print('Raster X Dim: %.2f, Raster Y Dim: %.2f'%(xDim,yDim))
+    nCols = xDim // rasterRes
+    nRows = yDim // rasterRes
+    print('Number of cols:  %d, Number of rows: %d'%(nCols,nRows)) #Check if the cols and row don't have decimals
+
+    #We create an array on the cell centroid
+    grid_y, grid_x = np.mgrid[yMin:yMax:nRows*1j,
+                            xMin:xMax:nCols*1j]
+    grid_coords = np.vstack((grid_x.ravel(), grid_y.ravel())).T
+    grid_z = griddata(points, headArray, grid_coords, method='linear')
+
+    # Find NaNs (outside convex hull) and replace with 'nearest'
+    rasterMask = np.isnan(grid_z)
+    if np.any(rasterMask):
+        grid_z[rasterMask] = griddata(points, headArray, grid_coords[rasterMask], method='nearest')
+
+    # Reshape to grid
+    grid_z = grid_z.reshape(grid_x.shape)
+
+    return grid_z, xMin, yMin, nRows, nCols
+
+def generateRasterFromArray(gwf, headArray, rasterRes=10, epsg=None, outputPath=None, limitLayer=None):
+    # xArray = gwf.modelgrid.xcellcenters
+    # yArray = gwf.modelgrid.ycellcenters
+    # points = list(zip(xArray,yArray))
+
+    #xMin, xMax, yMin, yMax = gwf.modelgrid.extent
+
+    # xDim = xMax - xMin
+    # yDim = yMax - yMin
+
+    # print('Raster X Dim: %.2f, Raster Y Dim: %.2f'%(xDim,yDim))
+    # nCols = xDim // rasterRes
+    # nRows = yDim // rasterRes
+    # print('Number of cols:  %d, Number of rows: %d'%(nCols,nRows)) #Check if the cols and row don't have decimals
+
+    # #We create an array on the cell centroid
+    # grid_y, grid_x = np.mgrid[yMin:yMax:nRows*1j,
+    #                         xMin:xMax:nCols*1j]
+    # grid_coords = np.vstack((grid_x.ravel(), grid_y.ravel())).T
+    # grid_z = griddata(points, headArray, grid_coords, method='linear')
+
+    # # Find NaNs (outside convex hull) and replace with 'nearest'
+    # rasterMask = np.isnan(grid_z)
+    # if np.any(rasterMask):
+    #     grid_z[rasterMask] = griddata(points, headArray, grid_coords[rasterMask], method='nearest')
+
+    # Reshape to grid
+    grid_z, xMin, yMin, nRows, nCols = numpyInterpolation(gwf, headArray, rasterRes)
+
+    # Define the transformation (location and resolution of the raster)
+    transform = from_origin(xMin, yMin, rasterRes, -rasterRes)  # (west, north, x_resolution, y_resolution)
+ 
+    # Define the metadata for the raster
+    metadata = {
+        'driver': 'GTiff',
+        'height': nRows,
+        'width': nCols,
+        'count': 1,  # Number of bands
+        'dtype': grid_z.dtype,
+        'crs': 'EPSG:%d'%epsg,  # Coordinate Reference System (e.g., WGS84)
+        'transform': transform,
+    }
+
+    # Write the array to a raster file
+    with rasterio.open(outputPath, 'w', **metadata) as dst:
+        dst.write(grid_z, 1)  # Write the array to the first band
+
+    if limitLayer:
+        with rasterio.open(outputPath) as src:
+            limitDf = gpd.read_file(limitLayer)
+            geoms = [limitDf.iloc[0].geometry]
+
+            # Get the raster's nodata value
+            nodata = src.nodata if src.nodata is not None else 0
+
+            # Clip the raster
+            out_image, out_transform = mask(src, geoms, crop=True)
+            out_image[out_image == nodata] = np.nan
+            out_meta = src.meta.copy()
+
+        # Update metadata
+        out_meta.update({
+            "height": out_image.shape[1],
+            "width": out_image.shape[2],
+            "transform": out_transform
+        })
+
+        # Save the clipped raster
+        with rasterio.open(outputPath[:-4]+'_clip.tif', 'w', **out_meta) as dest:
+            dest.write(out_image)
+
+def generateContoursFromRaster(raster: Union[rasterio.io.DatasetReader, np.ndarray, str],
+                               interval: int,
+                               outputPath: str=None):
+    # Checking if provided raster is either a file loaded with rasterio, an np.ndarray or a path directing to a .tif file
+    if not isinstance(raster, (rasterio.io.DatasetReader, str)):
+        raise TypeError("Raster must be a raster loaded with rasterio or a path directing to a .tif file")
+
+    # Checking if provided raster is of type str. If provided raster is a path (directing to a .tif file), load the file with rasterio
+    if isinstance(raster, str):
+        raster = rasterio.open(raster)
+
+    # Checking if provided interval is of type int
+    if not isinstance(interval, int):
+        raise TypeError("Interval must be provided as int")
+
+    # Checking if provided interval is negative
+    if interval <= 0:
+        raise ValueError("Interval must be greater than 0")
+
+    # Defining two empty lists to save contours and the corresponding values
+    contours = []
+    values = []
+
+    # Calculating minimum and maximum value from the given raster value
+    min_val = int(interval * round(np.amin(raster.read(1)[~np.isnan(raster.read(1))]) / interval))
+    max_val = int(interval * round(np.amax(raster.read(1)[~np.isnan(raster.read(1))]) / interval))
+
+    # Extracting contour lines and appending to lists
+    for value in range(min_val,
+                       max_val,
+                       interval):
+        contour = measure.find_contours(np.fliplr(raster.read(1).T),
+                                        value)
+        contours.append(contour)
+
+        values.extend([value for i in range(len(contour))])
+
+    # Flattening list containing contour lines
+    contours_new = [item for sublist in contours for item in sublist]
+
+    # Getting number of rows and columns of raster
+    rows, columns = raster.read(1).shape
+
+    # Getting corner coordinates of raster
+    x_left, y_bottom, x_right, y_top = raster.bounds
+
+    # Transforming and defining the coordinates of contours based on raster extent
+    x_new = [x_left + (x_right - x_left) / columns * contours_new[i][:, 0] for i in range(len(contours_new))]
+    y_new = [y_bottom + (y_top - y_bottom) / rows * contours_new[i][:, 1] for i in range(len(contours_new))]
+
+    # Converting the contours to lines (LineStrings - Shapely)
+    lines = [LineString(np.array([x_new[i],
+                                  y_new[i]]).T) for i in range(len(x_new))]
+
+    # Creating GeoDataFrame from lines
+    gdf_lines = gpd.GeoDataFrame(geometry=lines,
+                                 crs=raster.crs)
+
+    # Adding value column to GeoDataframe
+    gdf_lines['Z'] = values
+
+    gdf_lines.to_file(outputPath)
+
+    #return gdf_lines
+
+
