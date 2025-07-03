@@ -237,14 +237,28 @@ class Mf6VtkGenerator:
 
         if crop:
             botmArray = self.gwf.modelgrid.botm.flatten()
-            #wtArray = np.repeat(waterTable,self.gwf.modelgrid.nlay).filled()
             wtArray = np.hstack([waterTable for i in range(self.gwf.modelgrid.nlay)]) 
             activeArray = np.where(wtArray > botmArray, 1, 0)
             geomVtk.cell_data['active'] = activeArray
 
-        # geomVtk = geomVtk.threshold(value=(1,1), scalars="heads")
-        # geomVtk = geomVtk.cell_data_to_point_data()
         geomVtk.save(os.path.join(self.vtkDir,'waterHeads_kper_%s.vtk'%nper))
+
+    def generateArrayVtk(self, modelArray, modelArrayName:str, nper=0,nstp=0, crop=False):
+        headObj = self.gwf.output.head()
+        heads = headObj.get_data(kstpkper=(nstp,nper))
+        waterTable = flopy.utils.postprocessing.get_water_table(heads).flatten()
+
+        geomVtk = pv.read(self.geomPath)
+        geomVtk.clear_cell_data()
+        geomVtk.cell_data[modelArrayName] = modelArray.flatten()
+
+        if crop:
+            botmArray = self.gwf.modelgrid.botm.flatten()
+            wtArray = np.hstack([waterTable for i in range(self.gwf.modelgrid.nlay)]) 
+            activeArray = np.where(wtArray > botmArray, 1, 0)
+            geomVtk.cell_data['active'] = activeArray
+
+        geomVtk.save(os.path.join(self.vtkDir,'%s.vtk'%modelArrayName))
 
     def generateWaterTableVtk(self, nper, nstp=0):
         headObj = self.gwf.output.head()
