@@ -1,9 +1,9 @@
                                    MODFLOW 6
                 U.S. GEOLOGICAL SURVEY MODULAR HYDROLOGIC MODEL
                           GROUNDWATER FLOW MODEL (GWF)
-                            VERSION 6.6.0 12/19/2024
+                            VERSION 6.6.0 12/20/2024
 
-   MODFLOW 6 compiled Dec 19 2024 21:59:25 with Intel(R) Fortran Intel(R) 64
+   MODFLOW 6 compiled Dec 31 2024 17:08:41 with Intel(R) Fortran Intel(R) 64
    Compiler Classic for applications running on Intel(R) 64, Version 2021.7.0
                              Build 20220726_000000
 
@@ -53,16 +53,12 @@ The following BSD-3 License libraries are used in this USGS product:
       All rights reserved.
       (https://github.com/jacobwilliams/daglib)
 
-MODFLOW 6 compiler options: /Isrc\libmf6core.a.p /Isrc /I..\src
-/Isrc\libmf6_external.a.p /MTd /nologo /warn:general /warn:truncated_source
-/stand:f08 /Zi /traceback /O2 /fpe:0 /heap-arrays:0 /traceback /fpp
-/Qdiag-disable:7416 /Qdiag-disable:7025 /Qdiag-disable:5268
-/Qdiag-disable:10448 /Fdsrc\libmf6core.a.p\Utilities_compilerversion.F90.pdb
-/module:src\libmf6core.a.p
-/Fosrc/libmf6core.a.p/Utilities_compilerversion.F90.obj /c
+MODFLOW 6 compiler options: -Ilinux/obj_mf6 -O2 -no-heap-arrays -fpe0
+-traceback -Qdiag-disable:7416 -Qdiag-disable:7025 -Qdiag-disable:5268 -fpp
+-module linux/mod_mf6/ -c -o linux/obj_mf6/compilerversion.o
 
 System command used to initiate simulation:
-..\..\bin\mf6.exe
+/mnt/c/Users/saulm/Documents/GitHub/mf6Voronoi/examples/bin/mf6
 
 MODFLOW was compiled using uniform precision.
 

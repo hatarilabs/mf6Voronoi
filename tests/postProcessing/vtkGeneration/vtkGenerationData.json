@@ -1,0 +1,23 @@
+{
+    "ex-gwf-advtidal": {
+        "gwfname": "ex-gwf-advtidal"
+    },
+    "ex-gwf-bcf2ss": {
+        "gwfname": "ex-gwf-bcf2ss"
+    },
+    "ex-gwf-fhb": {
+        "gwfname": "ex-gwf-fhb"
+    },
+    "ex-gwf-twri01": {
+        "gwfname": "ex-gwf-twri01"
+    },
+    "hillslopeModel": {
+        "gwfname": "modflow"
+    },
+    "openPitInflows": {
+        "gwfname": "mf6model"
+    },
+    "regionalModel": {
+        "gwfname": "mf6model"
+    }
+}

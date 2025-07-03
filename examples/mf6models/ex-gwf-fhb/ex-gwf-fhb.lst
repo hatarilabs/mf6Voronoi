@@ -1,0 +1,593 @@
+                                   MODFLOW 6
+                U.S. GEOLOGICAL SURVEY MODULAR HYDROLOGIC MODEL
+                          GROUNDWATER FLOW MODEL (GWF)
+                            VERSION 6.6.0 12/20/2024
+
+   MODFLOW 6 compiled Dec 31 2024 17:08:41 with Intel(R) Fortran Intel(R) 64
+   Compiler Classic for applications running on Intel(R) 64, Version 2021.7.0
+                             Build 20220726_000000
+
+This software has been approved for release by the U.S. Geological 
+Survey (USGS). Although the software has been subjected to rigorous 
+review, the USGS reserves the right to update the software as needed 
+pursuant to further analysis and review. No warranty, expressed or 
+implied, is made by the USGS or the U.S. Government as to the 
+functionality of the software and related material nor shall the 
+fact of release constitute any such warranty. Furthermore, the 
+software is released on condition that neither the USGS nor the U.S. 
+Government shall be held liable for any damages resulting from its 
+authorized or unauthorized use. Also refer to the USGS Water 
+Resources Software User Rights Notice for complete use, copyright, 
+and distribution information.
+
+
+As a work of the United States Government, this USGS product is 
+in the public domain within the United States. You can copy, 
+modify, distribute, and perform the work, even for commercial 
+purposes, all without asking permission. Additionally, USGS 
+waives copyright and related rights in the work worldwide 
+through CC0 1.0 Universal Public Domain Dedication 
+(https://creativecommons.org/publicdomain/zero/1.0/).
+
+The following GNU Lesser General Public License (LGPL) libraries
+are used in this USGS product:
+
+    SPARSKIT version 2.0
+      ilut, luson, and qsplit 
+      (https://www-users.cse.umn.edu/~saad/software/SPARSKIT/)
+
+    RCM - Reverse Cuthill McKee Ordering
+      (https://people.math.sc.edu/Burkardt/f_src/rcm/rcm.html)
+
+    BLAS - Basic Linear Algebra Subprograms Level 1
+      (https://people.math.sc.edu/Burkardt/f_src/blas1_d/blas1_d.html)
+
+    SPARSEKIT - Sparse Matrix Utility Package
+      amux, dperm, dvperm, rperm, and cperm
+      (https://people.sc.fsu.edu/~jburkardt/f77_src/sparsekit/sparsekit.html)
+
+The following BSD-3 License libraries are used in this USGS product:
+
+    Modern Fortran DAG Library
+      Copyright (c) 2018, Jacob Williams
+      All rights reserved.
+      (https://github.com/jacobwilliams/daglib)
+
+MODFLOW 6 compiler options: -Ilinux/obj_mf6 -O2 -no-heap-arrays -fpe0
+-traceback -Qdiag-disable:7416 -Qdiag-disable:7025 -Qdiag-disable:5268 -fpp
+-module linux/mod_mf6/ -c -o linux/obj_mf6/compilerversion.o
+
+System command used to initiate simulation:
+/mnt/c/Users/saulm/Documents/GitHub/mf6Voronoi/examples/bin/mf6
+
+MODFLOW was compiled using uniform precision.
+
+Real Variables
+  KIND: 8
+  TINY (smallest non-zero value):    2.225074-308
+  HUGE (largest value):    1.797693+308
+  PRECISION: 15
+  SIZE IN BITS: 64
+
+Integer Variables
+  KIND: 4
+  HUGE (largest value): 2147483647
+  SIZE IN BITS: 32
+
+Long Integer Variables
+  KIND: 8
+  HUGE (largest value): 9223372036854775807
+  SIZE IN BITS: 64
+
+Logical Variables
+  KIND: 4
+  SIZE IN BITS: 32
+ 
+ NAMEFILE OPTIONS:
+    FLOWS WILL BE SAVED TO BUDGET FILE SPECIFIED IN OUTPUT CONTROL
+ END NAMEFILE OPTIONS:
+
+ DIS -- STRUCTURED GRID DISCRETIZATION PACKAGE, VERSION 2 : 3/27/2014 - INPUT READ FROM MEMPATH: __INPUT__/EX-GWF-FHB/DIS                          
+
+
+ NPF -- NODE PROPERTY FLOW PACKAGE, VERSION 1, 3/30/2015 INPUT READ FROM MEMPATH: __INPUT__/EX-GWF-FHB/NPF                          
+
+
+ IC -- Initial Conditions Package, Version 8, 3/28/2015 input read from mempath: __INPUT__/EX-GWF-FHB/IC                           
+
+
+ Setting Discretization Options
+    Model length unit [0=UND, 1=FEET, 2=METERS, 3=CENTIMETERS] set as 2
+ End Setting Discretization Options
+
+ Setting Discretization Dimensions
+    NLAY = 1
+    NROW = 3
+    NCOL = 10
+ End Setting Discretization Dimensions
+
+ Setting Discretization Griddata
+    DELR set from input file
+    DELC set from input file
+    TOP set from input file
+    BOTM set from input file
+ End Setting Discretization Griddata
+
+ Setting NPF Options
+    Specific discharge will be calculated at cell centers and written to DATA-SPDIS in budget file when requested.
+ End Setting NPF Options
+
+ Setting NPF Griddata
+    ICELLTYPE set from input file
+    K set from input file
+    K33 not provided.  Setting K33 = K.
+    K22 not provided.  Setting K22 = K.
+ End Setting NPF Griddata
+
+
+ WEL   -- WEL PACKAGE, VERSION 8, 2/22/2014 INPUT READ FROM MEMPATH: __INPUT__/EX-GWF-FHB/WEL                          
+
+ PROCESSING WEL BASE OPTIONS
+ END OF WEL BASE OPTIONS
+
+ PROCESSING WEL OPTIONS
+ END OF WEL OPTIONS
+
+ PROCESSING WEL BASE DIMENSIONS
+    MAXBOUND =       1
+ END OF WEL BASE DIMENSIONS
+
+ CHD   -- CHD PACKAGE, VERSION 8, 2/22/2014 INPUT READ FROM MEMPATH: __INPUT__/EX-GWF-FHB/CHD                          
+
+ PROCESSING CHD BASE OPTIONS
+ END OF CHD BASE OPTIONS
+
+ PROCESSING CHD BASE DIMENSIONS
+    MAXBOUND =       3
+ END OF CHD BASE DIMENSIONS
+    STRT set from input file
+
+ STO -- STORAGE PACKAGE, VERSION 1, 5/19/2014 INPUT READ FROM MEMPATH: __INPUT__/EX-GWF-FHB/STO                          
+
+
+ PROCESSING STORAGE OPTIONS
+    STORAGECOEFFICIENT OPTION:
+ Read storage coefficient rather than specific storage
+ END OF STORAGE OPTIONS
+
+The observation utility is active for "EX-GWF-FHB"
+ # File generated by Flopy version 3.9.0.dev2 on 12/19/2024 at 19:45:56.
+
+Processing observation options:
+
+
+    BINARY GRID INFORMATION WILL BE WRITTEN TO:
+      UNIT NUMBER: 1020
+      FILE NAME: ex-gwf-fhb.dis.grb
+
+ OPENED ex-gwf-fhb.dis.grb
+ FILE TYPE:DATA(BINARY)   UNIT 1020   STATUS:REPLACE             
+ FORMAT:UNFORMATTED            ACCESS:STREAM              
+ ACTION:READWRITE           
+
+      THE LAST TIME STEP WILL BE PRINTED
+      THE LAST TIME STEP WILL BE PRINTED
+ # File generated by Flopy version 3.9.0.dev2 on 12/19/2024 at 19:45:56.
+
+ PROCESSING OC OPTIONS
+
+    BUDGET INFORMATION WILL BE WRITTEN TO:
+      UNIT NUMBER: 1021
+      FILE NAME: ex-gwf-fhb.cbc
+
+ OPENED ex-gwf-fhb.cbc
+ FILE TYPE:DATA(BINARY)   UNIT 1021   STATUS:REPLACE             
+ FORMAT:UNFORMATTED            ACCESS:STREAM              
+ ACTION:READWRITE           
+
+    HEAD INFORMATION WILL BE WRITTEN TO:
+      UNIT NUMBER: 1022
+      FILE NAME: ex-gwf-fhb.hds
+
+ OPENED ex-gwf-fhb.hds
+ FILE TYPE:DATA(BINARY)   UNIT 1022   STATUS:REPLACE             
+ FORMAT:UNFORMATTED            ACCESS:STREAM              
+ ACTION:READWRITE           
+
+ END OF OC OPTIONS
+
+start timestep kper="1" kstp="1" mode="normal"
+
+
+ BEGIN READING OUTPUT CONTROL FOR STRESS PERIOD 1
+      ALL TIME STEPS WILL BE SAVED
+      ALL TIME STEPS WILL BE SAVED
+
+ END READING OUTPUT CONTROL FOR STRESS PERIOD 1
+
+
+ PROCESSING STORAGE PERIOD DATA
+ END PROCESSING STORAGE PERIOD DATA
+
+
+ STRESS PERIOD 1 IS TRANSIENT
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    1, STRESS PERIOD    1
+
+end timestep
+
+
+start timestep kper="1" kstp="2" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    2, STRESS PERIOD    1
+
+end timestep
+
+
+start timestep kper="1" kstp="3" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    3, STRESS PERIOD    1
+
+end timestep
+
+
+start timestep kper="1" kstp="4" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    4, STRESS PERIOD    1
+
+end timestep
+
+
+start timestep kper="1" kstp="5" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    5, STRESS PERIOD    1
+
+end timestep
+
+
+start timestep kper="1" kstp="6" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    6, STRESS PERIOD    1
+
+end timestep
+
+
+start timestep kper="1" kstp="7" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      7, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      7, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      7, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      7, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      7, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    7, STRESS PERIOD    1
+
+end timestep
+
+
+start timestep kper="1" kstp="8" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      8, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      8, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      8, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      8, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      8, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    8, STRESS PERIOD    1
+
+end timestep
+
+
+start timestep kper="1" kstp="9" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      9, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      9, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      9, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      9, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      9, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    9, STRESS PERIOD    1
+
+end timestep
+
+
+start timestep kper="1" kstp="10" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP     10, STRESS PERIOD      1
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP     10, STRESS PERIOD      1
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP     10, STRESS PERIOD      1
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP     10, STRESS PERIOD      1
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP     10, STRESS PERIOD      1
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP   10, STRESS PERIOD    1
+
+
+  VOLUME BUDGET FOR ENTIRE MODEL AT END OF TIME STEP   10, STRESS PERIOD   1
+  ---------------------------------------------------------------------------------------------------
+
+     CUMULATIVE VOLUME      L**3       RATES FOR THIS TIME STEP      L**3/T          PACKAGE NAME    
+     ------------------                 ------------------------                     ----------------
+
+           IN:                                      IN:
+           ---                                      ---
+              STO-SS =           0.0000                STO-SS =           0.0000     STORAGE                          
+                 WEL =     1850572.8592                   WEL =        5807.8512     WEL                              
+                 CHD =           0.0000                   CHD =           0.0000     CHD                              
+
+            TOTAL IN =     1850572.8592              TOTAL IN =        5807.8512
+
+          OUT:                                     OUT:
+          ----                                     ----
+              STO-SS =         100.0215                STO-SS =           0.2045     STORAGE                          
+                 WEL =           0.0000                   WEL =           0.0000     WEL                              
+                 CHD =     1850472.8377                   CHD =        5807.6467     CHD                              
+
+           TOTAL OUT =     1850572.8592             TOTAL OUT =        5807.8512
+
+            IN - OUT =      -2.6647E-06              IN - OUT =      -2.6557E-10
+
+ PERCENT DISCREPANCY =          -0.00     PERCENT DISCREPANCY =          -0.00
+
+
+
+
+         TIME SUMMARY AT END OF TIME STEP   10 IN STRESS PERIOD    1
+                    SECONDS     MINUTES      HOURS       DAYS        YEARS
+                    -----------------------------------------------------------
+   TIME STEP LENGTH 3.45600E+06  57600.      960.00      40.000     0.10951    
+ STRESS PERIOD TIME 3.45600E+07 5.76000E+05  9600.0      400.00      1.0951    
+         TOTAL TIME 3.45600E+07 5.76000E+05  9600.0      400.00      1.0951    
+
+
+end timestep
+
+
+start timestep kper="2" kstp="1" mode="normal"
+
+
+ END OF FILE DETECTED IN OUTPUT CONTROL.
+ CURRENT OUTPUT CONTROL SETTINGS WILL BE 
+ REPEATED UNTIL THE END OF THE SIMULATION.
+
+ OUTPUT CONTROL FOR STRESS PERIOD 2 IS REPEATED USING SETTINGS FROM A PREVIOUS STRESS PERIOD.
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      2
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      2
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      2
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      2
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      2
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    1, STRESS PERIOD    2
+
+end timestep
+
+
+start timestep kper="2" kstp="2" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      2
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      2
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      2
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      2
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      2
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    2, STRESS PERIOD    2
+
+end timestep
+
+
+start timestep kper="2" kstp="3" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      2
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      2
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      2
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      2
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      2
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    3, STRESS PERIOD    2
+
+end timestep
+
+
+start timestep kper="2" kstp="4" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      2
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      2
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      2
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      2
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      2
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    4, STRESS PERIOD    2
+
+
+  VOLUME BUDGET FOR ENTIRE MODEL AT END OF TIME STEP    4, STRESS PERIOD   2
+  ---------------------------------------------------------------------------------------------------
+
+     CUMULATIVE VOLUME      L**3       RATES FOR THIS TIME STEP      L**3/T          PACKAGE NAME    
+     ------------------                 ------------------------                     ----------------
+
+           IN:                                      IN:
+           ---                                      ---
+              STO-SS =           0.0000                STO-SS =           0.0000     STORAGE                          
+                 WEL =     2960490.2146                   WEL =        5394.6281     WEL                              
+                 CHD =           0.0000                   CHD =           0.0000     CHD                              
+
+            TOTAL IN =     2960490.2146              TOTAL IN =        5394.6281
+
+          OUT:                                     OUT:
+          ----                                     ----
+              STO-SS =         140.9305                STO-SS =           0.2045     STORAGE                          
+                 WEL =           0.0000                   WEL =           0.0000     WEL                              
+                 CHD =     2960349.2840                   CHD =        5394.4236     CHD                              
+
+           TOTAL OUT =     2960490.2146             TOTAL OUT =        5394.6281
+
+            IN - OUT =      -2.6962E-06              IN - OUT =      -1.6371E-10
+
+ PERCENT DISCREPANCY =          -0.00     PERCENT DISCREPANCY =          -0.00
+
+
+
+
+         TIME SUMMARY AT END OF TIME STEP    4 IN STRESS PERIOD    2
+                    SECONDS     MINUTES      HOURS       DAYS        YEARS
+                    -----------------------------------------------------------
+   TIME STEP LENGTH 4.32000E+06  72000.      1200.0      50.000     0.13689    
+ STRESS PERIOD TIME 1.72800E+07 2.88000E+05  4800.0      200.00     0.54757    
+         TOTAL TIME 5.18400E+07 8.64000E+05  14400.      600.00      1.6427    
+
+
+end timestep
+
+
+start timestep kper="3" kstp="1" mode="normal"
+
+
+ OUTPUT CONTROL FOR STRESS PERIOD 3 IS REPEATED USING SETTINGS FROM A PREVIOUS STRESS PERIOD.
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      3
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      3
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      3
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      3
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      1, STRESS PERIOD      3
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    1, STRESS PERIOD    3
+
+end timestep
+
+
+start timestep kper="3" kstp="2" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      3
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      3
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      3
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      3
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      2, STRESS PERIOD      3
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    2, STRESS PERIOD    3
+
+end timestep
+
+
+start timestep kper="3" kstp="3" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      3
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      3
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      3
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      3
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      3, STRESS PERIOD      3
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    3, STRESS PERIOD    3
+
+end timestep
+
+
+start timestep kper="3" kstp="4" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      3
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      3
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      3
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      3
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      4, STRESS PERIOD      3
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    4, STRESS PERIOD    3
+
+end timestep
+
+
+start timestep kper="3" kstp="5" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      3
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      3
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      3
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      3
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      5, STRESS PERIOD      3
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    5, STRESS PERIOD    3
+
+end timestep
+
+
+start timestep kper="3" kstp="6" mode="normal"
+
+ UBDSV1 SAVING           STO-SS ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      3
+ UBDSV1 SAVING     FLOW-JA-FACE ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      3
+ UBDSV06 SAVING       DATA-SPDIS IN MODEL EX-GWF-FHB       PACKAGE NPF             CONNECTED TO MODEL EX-GWF-FHB       PACKAGE NPF              ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      3
+ UBDSV06 SAVING              WEL IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE WEL              ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      3
+ UBDSV06 SAVING              CHD IN MODEL EX-GWF-FHB       PACKAGE EX-GWF-FHB      CONNECTED TO MODEL EX-GWF-FHB       PACKAGE CHD              ON UNIT   1021 AT TIME STEP      6, STRESS PERIOD      3
+
+ HEAD WILL BE SAVED ON UNIT 1022 AT END OF TIME STEP    6, STRESS PERIOD    3
+
+
+  VOLUME BUDGET FOR ENTIRE MODEL AT END OF TIME STEP    6, STRESS PERIOD   3
+  ---------------------------------------------------------------------------------------------------
+
+     CUMULATIVE VOLUME      L**3       RATES FOR THIS TIME STEP      L**3/T          PACKAGE NAME    
+     ------------------                 ------------------------                     ----------------
+
+           IN:                                      IN:
+           ---                                      ---
+              STO-SS =          43.0601                STO-SS =           0.2153     STORAGE                          
+                 WEL =     5541858.9256                   WEL =        9000.0000     WEL                              
+                 CHD =           0.0000                   CHD =           0.0000     CHD                              
+
+            TOTAL IN =     5541901.9857              TOTAL IN =        9000.2153
+
+          OUT:                                     OUT:
+          ----                                     ----
+              STO-SS =         178.0613                STO-SS =           0.0000     STORAGE                          
+                 WEL =           0.0000                   WEL =           0.0000     WEL                              
+                 CHD =     5541723.9244                   CHD =        9000.2153     CHD                              
+
+           TOTAL OUT =     5541901.9857             TOTAL OUT =        9000.2153
+
+            IN - OUT =      -3.6694E-06              IN - OUT =      -4.0545E-09
+
+ PERCENT DISCREPANCY =          -0.00     PERCENT DISCREPANCY =          -0.00
+
+
+
+
+         TIME SUMMARY AT END OF TIME STEP    6 IN STRESS PERIOD    3
+                    SECONDS     MINUTES      HOURS       DAYS        YEARS
+                    -----------------------------------------------------------
+   TIME STEP LENGTH 5.76000E+06  96000.      1600.0      66.667     0.18252    
+ STRESS PERIOD TIME 3.45600E+07 5.76000E+05  9600.0      400.00      1.0951    
+         TOTAL TIME 8.64000E+07 1.44000E+06  24000.      1000.0      2.7379    
+
+
+end timestep
+
