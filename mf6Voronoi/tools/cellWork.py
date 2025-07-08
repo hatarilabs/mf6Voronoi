@@ -3,6 +3,19 @@ import geopandas as gpd
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
 from typing import Union
 
+def getCellFromGeom(gwf,interIx,geomPath):
+    geomSrc = gpd.read_file(geomPath)
+    insideCellsIds = []
+
+    #working with the cell ids
+    #loop over the geometries to get the cellids
+    for index, row in geomSrc.iterrows():
+        tempCellIds = interIx.intersect(row.geometry).cellids
+        for cell in tempCellIds:
+            insideCellsIds.append(cell)
+
+    return insideCellsIds
+
 def getLayCellElevTupleFromRaster(gwf,interIx,rasterPath,geomPath):
     rasterSrc = rasterio.open(rasterPath)
     geomSrc = gpd.read_file(geomPath)
