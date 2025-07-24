@@ -14,7 +14,7 @@ from rasterio.transform import from_origin
 from rasterio.mask import mask
 import geopandas as gpd
 from skimage import measure
-from shapely.geometry import box, Polygon, LineString
+from shapely.geometry import box, Point, Polygon, LineString
 
 from scipy.interpolate import griddata
 from mf6Voronoi.utils import isRunningInJupyter, printBannerHtml, printBannerText
@@ -139,68 +139,80 @@ def FlowVectorGenerator(gwf, backgroundImageDict=None,
     else:
         print("No Dis file was found")
 
-def numpyInterpolation(gwf, headArray, rasterRes):
+def numpyInterpolation(gwf, headArray, meshLayer, rasterRes):
+
     xArray = gwf.modelgrid.xcellcenters
     yArray = gwf.modelgrid.ycellcenters
-    points = list(zip(xArray,yArray))
+    points = list(zip(xArray,yArray)) 
+    outputArray = np.copy(headArray)
 
     xMin, xMax, yMin, yMax = gwf.modelgrid.extent
+    
+    def getCellIndex(xCoord,yCoord, headArray):
+        cellPoint = Point(xCoord,yCoord)
+        cellBuffer = cellPoint.buffer(1.0) #for points that are a bit outside
+        cellMask = meshDf.intersects(cellBuffer)
+        cellIndex = meshDf[cellMask].index.tolist()
+        if len(cellIndex) == 1: # just for case that only 1 cell is gound
+            points.append((xCoord,yCoord))
+            headArray = np.copy(headArray)
+            outputArray = np.append(headArray,headArray[cellIndex])
+            return outputArray
+        else: 
+            print('WARNING: No head on vextex was found, or something went wrong with your mesh')
+            outputArray = np.copy(headArray)
+            return outputArray
+    
+    if meshLayer:
+        meshDf = gpd.read_file(meshLayer)
+        for xValue in np.linspace(xMin,xMax,20):
+            outputArray = getCellIndex(xValue, yMin, outputArray)
+            outputArray = getCellIndex(xValue, yMax, outputArray)
+        for yValue in np.linspace(yMin,yMax,20):
+            outputArray = getCellIndex(xMin, yValue, outputArray)
+            outputArray = getCellIndex(xMax, yValue, outputArray)
 
     xDim = xMax - xMin
     yDim = yMax - yMin
 
     print('Raster X Dim: %.2f, Raster Y Dim: %.2f'%(xDim,yDim))
-    nCols = xDim // rasterRes
-    nRows = yDim // rasterRes
+    nCols = int(xDim//rasterRes) + 1
+    nRows = int(yDim//rasterRes) + 1
     print('Number of cols:  %d, Number of rows: %d'%(nCols,nRows)) #Check if the cols and row don't have decimals
 
     #We create an array on the cell centroid
-    grid_y, grid_x = np.mgrid[yMin:yMax:nRows*1j,
-                            xMin:xMax:nCols*1j]
-    grid_coords = np.vstack((grid_x.ravel(), grid_y.ravel())).T
-    grid_z = griddata(points, headArray, grid_coords, method='linear')
+    # grid_y, grid_x = np.mgrid[yMin+rasterRes/2:yMax+rasterRes/2:nRows*1j,
+    #                     xMin+rasterRes/2:xMax+rasterRes/2:nCols*1j]
+    #grid_y, grid_x = np.mgrid[yMin:(yMin+nRows*rasterRes):nRows*1j,
+    #                        xMin:(xMin+nCols*rasterRes):nCols*1j]
+    grid_x, grid_y = np.meshgrid(
+        np.linspace(xMin, xMax, nCols),
+        np.linspace(yMax, yMin, nRows)
+    )
+    
+    # grid_coords = np.vstack((grid_x.ravel(), grid_y.ravel())).T
+    # grid_z = griddata(points, outputArray, grid_coords, method='cubic')
+
 
     # Find NaNs (outside convex hull) and replace with 'nearest'
-    rasterMask = np.isnan(grid_z)
-    if np.any(rasterMask):
-        grid_z[rasterMask] = griddata(points, headArray, grid_coords[rasterMask], method='nearest')
-
-    # Reshape to grid
-    grid_z = grid_z.reshape(grid_x.shape)
-
-    return grid_z, xMin, yMin, nRows, nCols
-
-def generateRasterFromArray(gwf, headArray, rasterRes=10, epsg=None, outputPath=None, limitLayer=None):
-    # xArray = gwf.modelgrid.xcellcenters
-    # yArray = gwf.modelgrid.ycellcenters
-    # points = list(zip(xArray,yArray))
-
-    #xMin, xMax, yMin, yMax = gwf.modelgrid.extent
-
-    # xDim = xMax - xMin
-    # yDim = yMax - yMin
-
-    # print('Raster X Dim: %.2f, Raster Y Dim: %.2f'%(xDim,yDim))
-    # nCols = xDim // rasterRes
-    # nRows = yDim // rasterRes
-    # print('Number of cols:  %d, Number of rows: %d'%(nCols,nRows)) #Check if the cols and row don't have decimals
-
-    # #We create an array on the cell centroid
-    # grid_y, grid_x = np.mgrid[yMin:yMax:nRows*1j,
-    #                         xMin:xMax:nCols*1j]
-    # grid_coords = np.vstack((grid_x.ravel(), grid_y.ravel())).T
-    # grid_z = griddata(points, headArray, grid_coords, method='linear')
-
-    # # Find NaNs (outside convex hull) and replace with 'nearest'
     # rasterMask = np.isnan(grid_z)
     # if np.any(rasterMask):
     #     grid_z[rasterMask] = griddata(points, headArray, grid_coords[rasterMask], method='nearest')
 
     # Reshape to grid
-    grid_z, xMin, yMin, nRows, nCols = numpyInterpolation(gwf, headArray, rasterRes)
+    # Interpolation
+    grid_z = griddata(points, outputArray, (grid_x, grid_y), method='linear')
+    grid_z = grid_z.reshape(grid_x.shape)
+
+    return grid_z, xMin, yMax, nRows, nCols
+
+def generateRasterFromArray(gwf, headArray, meshLayer=None, rasterRes=10, epsg=None, outputPath=None, limitLayer=None):
+
+    # Reshape to grid
+    grid_z, xMin, yMax, nRows, nCols = numpyInterpolation(gwf, headArray, meshLayer , rasterRes)
 
     # Define the transformation (location and resolution of the raster)
-    transform = from_origin(xMin, yMin, rasterRes, -rasterRes)  # (west, north, x_resolution, y_resolution)
+    transform = from_origin(xMin, yMax, rasterRes, rasterRes)  # (west, north, x_resolution, y_resolution)
  
     # Define the metadata for the raster
     metadata = {

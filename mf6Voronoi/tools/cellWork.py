@@ -3,6 +3,19 @@ import geopandas as gpd
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
 from typing import Union
 
+def getCellFromGeom(gwf,interIx,geomPath):
+    geomSrc = gpd.read_file(geomPath)
+    insideCellsIds = []
+
+    #working with the cell ids
+    #loop over the geometries to get the cellids
+    for index, row in geomSrc.iterrows():
+        tempCellIds = interIx.intersect(row.geometry).cellids
+        for cell in tempCellIds:
+            insideCellsIds.append(cell)
+
+    return insideCellsIds
+
 def getLayCellElevTupleFromRaster(gwf,interIx,rasterPath,geomPath):
     rasterSrc = rasterio.open(rasterPath)
     geomSrc = gpd.read_file(geomPath)
@@ -108,6 +121,40 @@ def getLayCellElevTupleFromObs(gwf,
 
     return nameList, layCellTupleList 
     
+def getLayCellElevTupleFromField(gwf, interIx, geomPath, fieldName):
+    #rasterSrc = rasterio.open(rasterPath)
+    geomSrc = gpd.read_file(geomPath)
+    insideCellsIds = []
+    layCellTupleList = []
 
+    #model parameters
+    nlay = gwf.modelgrid.nlay
+    #xCenter = gwf.modelgrid.xcellcenters
+    #yCenter = gwf.modelgrid.ycellcenters
+    #rasterElev = [elev[0] for elev in rasterSrc.sample(zip(xCenter,yCenter))] 
+    topBotm = gwf.modelgrid.top_botm
+
+    #working with the cell ids
+    #loop over the geometries to get the cellids
+    for index, row in geomSrc.iterrows():
+        tempCellIds = interIx.intersect(row.geometry).cellids
+        for cell in tempCellIds:
+            insideCellsIds.append(cell)
+
+    #working with the cell elevations and create laycell tuples
+    for index, cell in enumerate(insideCellsIds):
+        fieldElev = geomSrc.iloc[index][fieldName]
+        #looping over elevations
+        if topBotm[-1, cell] < fieldElev <= topBotm[0,cell]:
+            #cellElevList.append(geomSrc.iloc[index][fieldName])
+            pass
+        else: 
+            print('The cell %d has a elevation of %.2f outside the model vertical domain'%(cell,fieldElev))
+        #looping through layers
+        for lay in range(nlay):  
+            if topBotm[lay+1, cell] < fieldElev <= topBotm[lay,cell]:
+                layCellTupleList.append((lay,cell))
+
+    return layCellTupleList
 
 

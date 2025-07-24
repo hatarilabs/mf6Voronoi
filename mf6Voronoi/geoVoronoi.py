@@ -362,4 +362,41 @@ class createVoronoi():
         end = time.time()
         print('\nTime required for voronoi generation: %.2f seconds \n'%(end - start), flush=True)
 
-   
+    def checkVoronoiQuality(self, threshold = 0.001):
+        print('\n/----Performing quality verification of voronoi mesh----/')
+        self.modelDis['fixPoints'] = []
+        # empty list to store distances
+        shortSides = []
+        
+        for index, poly in enumerate(self.modelDis['voronoiRegions'].geoms):
+            polyCoordList = []
+            x,y = poly.exterior.coords.xy
+            polyCoordList.append(list(zip(x,y)))
+            if poly.interiors[:] != []:
+                for interior in poly.interiors:
+                    polyCoordList.append(interior.coords[:])
+
+            # loopo over polygon on polygon list
+            for polyCoord in polyCoordList:
+                #looping over sides
+                for i in range(len(polyCoord) - 1):
+                    p1 = polyCoord[i]
+                    p2 = polyCoord[i + 1]
+                    edge = LineString([p1, p2])
+                    length = edge.length
+                    if length < threshold:
+                        xMean = (p1[0] + p2[0])/2
+                        yMean = (p1[1] + p2[1])/2
+                        self.modelDis['fixPoints'].append([xMean,yMean])
+                        shortSides.append((p1, p2, length))
+            
+        # Output short sides
+
+        if len(shortSides) == 0:
+            print("Your mesh has no edges shorter than your threshold")
+        else:
+            for side in shortSides:
+                print(f"Short side on polygon: {index} with length = {side[2]:.5f}")
+
+    def fixVoronoiShortSides(self):
+        self.modelDis['vertexTotal'] = self.modelDis['vertexTotal'] + self.modelDis['fixPoints']
