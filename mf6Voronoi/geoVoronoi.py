@@ -157,6 +157,7 @@ class createVoronoi():
         elif circleUnions.geom_type == 'Polygon':
             circleUnionExtIntList += getPolygonAndInteriors(circleUnions)
             circleUnionExtWithIntList.append(circleUnions)
+            
         
         # from the multipolygons 
         polyPointList = []
@@ -175,7 +176,7 @@ class createVoronoi():
                 
         circleUnionExtIntMpoly = MultiPolygon(circleUnionExtIntList)
         circleUnionExtWithIntMpoly = MultiPolygon(circleUnionExtWithIntList)
-
+        
         return circleUnionExtWithIntMpoly, circleUnionExtIntMpoly, polyPointList
 
     def generateAllCircles(self):
