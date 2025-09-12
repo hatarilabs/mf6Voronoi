@@ -1,6 +1,7 @@
 import rasterio
 import geopandas as gpd
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
+from shapely.geometry.base import BaseGeometry
 from typing import Union
 
 def getCellFromGeom(gwf,interIx,geomPath):
@@ -60,8 +61,7 @@ def getLayCellElevTupleFromElev(gwf,
         print("You have inserted a fixed elevation")
     else:
         raise TypeError("Elevation value has to be a number or a list of numbers")
-        
-    geomSrc = gpd.read_file(geomPath)
+    
     insideCellsIds = []
     layCellTupleList = []
 
@@ -69,12 +69,18 @@ def getLayCellElevTupleFromElev(gwf,
     nlay = gwf.modelgrid.nlay
     topBotm = gwf.modelgrid.top_botm
 
-    #working with the cell ids
-    #loop over the geometries to get the cellids
-    for index, row in geomSrc.iterrows():
-        tempCellIds = interIx.intersect(row.geometry).cellids
+    if isinstance(geomPath,str):
+        geomSrc = gpd.read_file(geomPath)
+        #working with the cell ids
+        #loop over the geometries to get the cellids
+        for index, row in geomSrc.iterrows():
+            tempCellIds = interIx.intersect(row.geometry).cellids
+            for cell in tempCellIds:
+                insideCellsIds.append(cell)
+    elif isinstance(geomPath, BaseGeometry):
+        tempCellIds = interIx.intersect(geomPath).cellids
         for cell in tempCellIds:
-            insideCellsIds.append(cell)
+                insideCellsIds.append(cell)
 
     #working with the cell elevations
     for cell in insideCellsIds:
