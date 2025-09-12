@@ -22,7 +22,7 @@
     "multilayeredTransient": {
         "index": 5,
         "template": "p5_multilayeredTransient.ipynb",
-        "desc": "Template for multilayeres (15 layers) and transient (6 stress periods) regional model"
+        "desc": "Template for multilayer (15 layers) and transient (6 stress periods) regional model"
     },
     "basicTransport": {
         "index": 6,

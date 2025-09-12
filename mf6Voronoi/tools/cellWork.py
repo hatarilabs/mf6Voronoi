@@ -1,6 +1,7 @@
 import rasterio
 import geopandas as gpd
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon
+from shapely.geometry.base import BaseGeometry
 from typing import Union
 
 def getCellFromGeom(gwf,interIx,geomPath):
@@ -54,14 +55,14 @@ def getLayCellElevTupleFromRaster(gwf,interIx,rasterPath,geomPath):
 def getLayCellElevTupleFromElev(gwf,
                                 interIx,
                                 elevValue: Union[float,int],
-                                geomPath):
+                                geomObj: Union[str,BaseGeometry]):
     
     if isinstance(elevValue,(int,float)):
         print("You have inserted a fixed elevation")
     else:
         raise TypeError("Elevation value has to be a number or a list of numbers")
         
-    geomSrc = gpd.read_file(geomPath)
+    
     insideCellsIds = []
     layCellTupleList = []
 
@@ -69,10 +70,16 @@ def getLayCellElevTupleFromElev(gwf,
     nlay = gwf.modelgrid.nlay
     topBotm = gwf.modelgrid.top_botm
 
-    #working with the cell ids
-    #loop over the geometries to get the cellids
-    for index, row in geomSrc.iterrows():
-        tempCellIds = interIx.intersect(row.geometry).cellids
+    if isinstance(geomObj,str):
+        geomSrc = gpd.read_file(geomObj)
+        #working with the cell ids
+        #loop over the geometries to get the cellids
+        for index, row in geomSrc.iterrows():
+            tempCellIds = interIx.intersect(row.geometry).cellids
+            for cell in tempCellIds:
+                insideCellsIds.append(cell)
+    elif isinstance(geomObj,BaseGeometry):
+        tempCellIds = interIx.intersect(geomObj).cellids
         for cell in tempCellIds:
             insideCellsIds.append(cell)
 
