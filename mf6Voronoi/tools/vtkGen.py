@@ -120,8 +120,6 @@ class Mf6VtkGenerator:
             except AttributeError:
                 print('[WARNING] There is no data for the required stress period')
         
-
-        
     @timing_decorator
     def exportObs(self,obs):
         #open package 
@@ -213,15 +211,16 @@ class Mf6VtkGenerator:
         vtkParam.save(paramPath)
         print("Parameter Vtk Generated")
         
-    def generateBcObsVtk(self, nper):
+    def generateBcObsVtk(self, nper, skipList=[]):
         vtkGrid = pv.read(self.geomPath)
         bcList = [x for x in self.packageList if re.search(r'\d',x) and not re.search('obs',x,re.IGNORECASE)]
         obsList = [x for x in self.packageList if re.fullmatch('obs',x,re.IGNORECASE)]
         #print(bcList)
         for bc in bcList:
-            print('\n/--------%s vtk generation-------/'%bc)
-            self.exportBc(bc, nper)
-            print('/--------%s vtk generated-------/\n'%bc)
+            if bc not in skipList:
+                print('\n/--------%s vtk generation-------/'%bc)
+                self.exportBc(bc, nper)
+                print('/--------%s vtk generated-------/\n'%bc)
         for obs in obsList:
             self.exportObs(obs)
             print("%s btk generated"%obs)

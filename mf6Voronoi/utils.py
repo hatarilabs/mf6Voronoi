@@ -330,7 +330,7 @@ def printBannerHtml():
     <div>
     <a href="https://hatarilabs.com" target="_blank">
             <img src="https://olivosbellaterra.com/static/img/png/hatarilabs.png" alt="Hatarilabs" width="200" height="200"></a> 
-            <p class="styled-text">build faster, analyze more</p>
+            <p class="styled-text">mf6Voronoi will have a web version in 2028</p>
     </div>
 
     <table border="0px">
