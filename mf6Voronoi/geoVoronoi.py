@@ -6,6 +6,8 @@ from scipy.spatial.distance import cdist
 from scipy.spatial import Voronoi,cKDTree
 #import geospatial libraries
 import fiona
+import rasterio
+from rasterio.mask import mask
 from tqdm import tqdm
 from shapely.ops import split, unary_union, voronoi_diagram
 import geopandas as gpd
@@ -55,6 +57,15 @@ class createVoronoi():
         self.modelDis['crs'] = limitShape.crs
         #initiate active area list:
         self.modelDis['activeArea'] = [self.modelDis['limitGeometry']]
+
+    def addDem(self, rasterPath, min_slope, max_slope, min_ref, max_ref):
+        self.modelDis['dem'] = {
+            'rasterPath': rasterPath,
+            'min_slope': min_slope,
+            'max_slope': max_slope,
+            'min_ref': min_ref,
+            'max_ref': max_ref
+        }
 
     #here we add the layerRef to the function
     def addLayer(self, layerName, shapePath, layerRef):
@@ -226,6 +237,113 @@ class createVoronoi():
         self.modelDis['circleUnion'] = totalCircleUnion
         self.modelDis['circleUnionInteriors'] = totalCircleUnionInteriors
 
+    def generateDemPoints(self):
+        print('\n/----Generation of points from DEM----/')
+        start = time.time()
+
+        dem_config = self.modelDis['dem']
+        rasterPath = dem_config['rasterPath']
+
+        # Read DEM
+        with rasterio.open(rasterPath) as src:
+            # Mask with limit geometry
+            # We use pointsMaxRefPoly which represents the area not covered by other refinements
+            # If pointsMaxRefPoly is not set yet, we use limitGeometry
+            mask_poly = self.modelDis.get('pointsMaxRefPoly', self.modelDis['limitGeometry'])
+
+            # Ensure mask_poly is in a list/iterable for mask()
+            # mask function requires a list of GeoJSON-like features
+            if isinstance(mask_poly, Polygon):
+                geoms = [mapping(mask_poly)]
+            elif isinstance(mask_poly, MultiPolygon):
+                 geoms = [mapping(p) for p in mask_poly.geoms]
+            else:
+                 geoms = [mapping(mask_poly)]
+
+            try:
+                out_image, out_transform = mask(src, geoms, crop=True)
+                out_image = out_image[0] # Take first band
+            except ValueError:
+                print("Warning: Limit geometry and DEM do not overlap or error in masking. No points generated from DEM.")
+                self.modelDis['vertexDem'] = []
+                return
+
+            # Compute Slope
+            # Gradient returns (axis 0, axis 1) -> (dy, dx)
+            # px, py are pixel sizes
+            # out_transform.a is width of pixel (x-scale)
+            # out_transform.e is height of pixel (y-scale, usually negative)
+
+            dx = out_transform.a
+            dy = -out_transform.e # Make positive for magnitude
+
+            # np.gradient returns gradient along axis 0 (y) and axis 1 (x)
+            grad_y, grad_x = np.gradient(out_image, dy, dx)
+
+            slope = np.sqrt(grad_x**2 + grad_y**2)
+
+            # Mask out nodata
+            if src.nodata is not None:
+                mask_data = (out_image == src.nodata)
+                slope[mask_data] = 0 # or handle appropriately
+
+        # Generate points based on slope
+        # Target cell size S
+        # P = Area_pixel / S^2
+
+        min_s = dem_config['min_slope']
+        max_s = dem_config['max_slope']
+        min_r = dem_config['min_ref']
+        max_r = dem_config['max_ref']
+
+        # Linear interpolation of Size vs Slope
+        # Slope < min_s => max_r
+        # Slope > max_s => min_r
+
+        # Clip slope
+        slope_clipped = np.clip(slope, min_s, max_s)
+
+        # Map to size
+        # Size = max_r - (slope_clipped - min_s) / (max_s - min_s) * (max_r - min_r)
+
+        # Avoid division by zero if max_s == min_s
+        if max_s == min_s:
+             size_grid = np.full(slope_clipped.shape, max_r)
+        else:
+             size_grid = max_r - (slope_clipped - min_s) / (max_s - min_s) * (max_r - min_r)
+
+        # Calculate Probability
+        pixel_area = abs(dx * dy)
+        prob_grid = pixel_area / (size_grid ** 2)
+
+        # Random Sampling
+        # Generate random grid
+        rand_grid = np.random.random(size_grid.shape)
+
+        # Select pixels
+        # Also ensure we only select pixels inside the mask (if mask resulted in 0s outside)
+        valid_mask = (out_image != src.nodata) if src.nodata is not None else np.ones(out_image.shape, dtype=bool)
+
+        selected_indices = np.where((rand_grid < prob_grid) & valid_mask)
+
+        # Convert indices to coordinates
+        rows, cols = selected_indices
+        xs, ys = rasterio.transform.xy(out_transform, rows, cols, offset='center')
+
+        dem_points = list(zip(xs, ys))
+
+        # Filter points strictly inside the polygon (because mask is bbox or raster-based)
+        # However, checking each point is slow.
+        # If the polygon is simple, we might skip this or accept some points on the edge.
+        # But for non-convex polygons, mask() keeps data inside bbox but outside polygon as nodata?
+        # Rasterio mask() with all_touched=False (default) masks out pixels whose center is not within the polygon.
+        # So we should be good.
+
+        self.modelDis['vertexDem'] = dem_points
+
+        end = time.time()
+        print(f'Generated {len(dem_points)} points from DEM in {end-start:.2f} seconds')
+
     def getPointsMinMaxRef(self):
 
         #define refs
@@ -236,7 +354,10 @@ class createVoronoi():
             layerRefList.append(value['layerRef'])
 
         #minRef = self.modelDis['minRef']
-        minRef = np.array(layerRefList).min()
+        if layerRefList:
+            minRef = np.array(layerRefList).min()
+        else:
+            minRef = maxRef # fallback
 
         #define objects to store the uniform vertex
         self.modelDis['vertexMaxRef'] =[]
@@ -277,14 +398,19 @@ class createVoronoi():
         self.modelDis['pointsMaxRefPoly']=outerPoly
 
         #creating points of coarse grid
-        maxRefXList = np.arange(self.modelDis['xMin']+minRef,self.modelDis['xMax'],maxRef)
-        maxRefYList = np.arange(self.modelDis['yMin']+minRef,self.modelDis['yMax'],maxRef)
+        # If DEM is configured, we use it instead of the uniform coarse grid
+        if 'dem' in self.modelDis:
+             self.generateDemPoints()
+             # vertexMaxRef is empty as we use vertexDem
+        else:
+            maxRefXList = np.arange(self.modelDis['xMin']+minRef,self.modelDis['xMax'],maxRef)
+            maxRefYList = np.arange(self.modelDis['yMin']+minRef,self.modelDis['yMax'],maxRef)
 
-        for xCoord in maxRefXList:
-            for yCoord in maxRefYList:
-                refPoint = Point(xCoord,yCoord)
-                if outerPoly.contains(refPoint):
-                    self.modelDis['vertexMaxRef'].append((xCoord,yCoord))
+            for xCoord in maxRefXList:
+                for yCoord in maxRefYList:
+                    refPoint = Point(xCoord,yCoord)
+                    if outerPoly.contains(refPoint):
+                        self.modelDis['vertexMaxRef'].append((xCoord,yCoord))
 
         self.modelDis['pointsMaxRefPoly']=outerPoly
 
@@ -315,6 +441,8 @@ class createVoronoi():
             totalRawPoints += self.modelDis['vertexDist'][key]
         totalRawPoints += self.modelDis['vertexBuffer']
         totalRawPoints += self.modelDis['vertexMaxRef']
+        if 'vertexDem' in self.modelDis:
+             totalRawPoints += self.modelDis['vertexDem']
         totalRawPoints += self.modelDis['vertexMinRef']
         totalDefPoints = []
 
