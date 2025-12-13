@@ -1,3 +1,3 @@
-__version__ = "0.0.1"
+from .voronoi import VoronoiGrid
 
-from pyvista import examples as examples
+__version__ = "0.1.0"
