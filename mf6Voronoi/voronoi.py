@@ -6,6 +6,7 @@ import geopandas as gpd
 import pandas as pd
 import rasterio
 from rasterio.mask import mask
+from rasterio.features import rasterize
 from shapely.geometry import Point, Polygon, MultiPolygon, LineString, box
 from shapely.ops import unary_union, voronoi_diagram
 from scipy.spatial import Voronoi, cKDTree
