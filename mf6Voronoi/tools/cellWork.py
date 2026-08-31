@@ -55,12 +55,13 @@ def getLayCellElevTupleFromRaster(gwf,interIx,rasterPath,geomPath):
 def getLayCellElevTupleFromElev(gwf,
                                 interIx,
                                 elevValue: Union[float,int],
-                                geomPath):
+                                geomObj: Union[str,BaseGeometry]):
     
     if isinstance(elevValue,(int,float)):
         print("You have inserted a fixed elevation")
     else:
         raise TypeError("Elevation value has to be a number or a list of numbers")
+        
     
     insideCellsIds = []
     layCellTupleList = []
@@ -69,16 +70,16 @@ def getLayCellElevTupleFromElev(gwf,
     nlay = gwf.modelgrid.nlay
     topBotm = gwf.modelgrid.top_botm
 
-    if isinstance(geomPath,str):
-        geomSrc = gpd.read_file(geomPath)
+    if isinstance(geomObj,str):
+        geomSrc = gpd.read_file(geomObj)
         #working with the cell ids
         #loop over the geometries to get the cellids
         for index, row in geomSrc.iterrows():
             tempCellIds = interIx.intersect(row.geometry).cellids
             for cell in tempCellIds:
                 insideCellsIds.append(cell)
-    elif isinstance(geomPath, BaseGeometry):
-        tempCellIds = interIx.intersect(geomPath).cellids
+    elif isinstance(geomObj,BaseGeometry):
+        tempCellIds = interIx.intersect(geomObj).cellids
         for cell in tempCellIds:
                 insideCellsIds.append(cell)
 

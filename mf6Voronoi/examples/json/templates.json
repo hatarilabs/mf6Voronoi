@@ -22,11 +22,16 @@
     "multilayeredTransient": {
         "index": 5,
         "template": "p5_multilayeredTransient.ipynb",
-        "desc": "Template for multilayeres (15 layers) and transient (6 stress periods) regional model"
+        "desc": "Template for multilayer (15 layers) and transient (6 stress periods) regional model"
     },
     "basicTransport": {
         "index": 6,
         "template": "p6_basicTransport.ipynb",
         "desc": "Template with basic lines for transport modeling based on a flow model"
+    },
+    "seawaterIntrusion": {
+        "index": 7,
+        "template": "p7_seawaterIntrusion.ipynb",
+        "desc": "Template for seawater intrusion modeling using the BUY package"
     }
 }
