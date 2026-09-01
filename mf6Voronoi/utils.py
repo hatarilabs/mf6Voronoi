@@ -3,12 +3,133 @@ import os, shutil, time, json
 from pathlib import Path
 import io
 import fiona
+# /--------------- try to import dask_geopandas
+try:
+  import dask_geopandas as dgpd
+  HAS_DASK = True
+except ImportError:
+  dgpd = None
+  HAS_DASK = False
+# ----------------/
 import numpy as np
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, mapping
 from shapely.ops import unary_union
 import shutil
 from collections import OrderedDict
 
+# _____________________________%% KMB ADDITIONS
+
+def unique_rows(a,sort=True,return_inverse=False):
+    '''
+    Find unique rows and return indexes of unique rows
+    '''
+    a = np.ascontiguousarray(a)
+    unique_a,uind,uinv = np.unique(a.view([('', a.dtype)]*a.shape[1]),return_index=True,return_inverse=True)
+    if sort:    
+        uord = [(uind==utemp).nonzero()[0][0] for utemp in np.sort(uind)]
+        outorder = uind[uord]
+    else:
+        outorder = uind
+    if return_inverse:
+        return unique_a,uind,uinv
+    else:
+        return outorder
+
+def xy_in_poly(xy,poly,use_dask=False,nproc=10,return_inds=False):
+    
+    points_array = np.array(xy)
+    point_df = gpd.GeoDataFrame(gpd.pd.DataFrame(np.arange(len(xy)),columns=['id']),
+                                         geometry=gpd.points_from_xy(points_array[:,0],points_array[:,1]))
+    if use_dask:
+        innerpoint_bool = dgpd.from_geopandas(point_df,nproc).within(poly).compute().values
+    else:
+        innerpoint_bool = point_df.within(poly).values
+                 
+    filterPointList = points_array[innerpoint_bool].tolist()
+    
+    if return_inds:
+        return filterPointList,innerpoint_bool
+    else:
+        return filterPointList
+        
+
+def findIndex(var, coordArray, intervalNumber=10):
+    for interval in range(intervalNumber):
+        if var >= coordArray[interval] and var < coordArray[interval+1]:
+            return interval
+            break
+
+            
+def processVertexFilterCloseLimitDf(layerRef,layer_geoms,modelDis,use_dask=False,nproc=10):
+    
+    layer_df = gpd.GeoDataFrame(np.arange(len(layer_geoms)),columns=['id'],
+                                geometry=layer_geoms)
+    
+    # First collect all geometries within limitGeometry
+    inside_limit_bool = layer_df.buffer(layerRef).within(modelDis['limitGeometry'])
+    filterPointList_Org = layer_df.loc[inside_limit_bool].get_coordinates().values.tolist()
+    
+    # Then check for vertices within limit but buffered circle is on the edge
+    temp_points = layer_df.loc[np.invert(inside_limit_bool)].get_coordinates().values
+    all_points_df = gpd.GeoDataFrame(geometry=gpd.points_from_xy(temp_points[:,0],temp_points[:,1]))
+    if use_dask:
+        filterPointList_Org.extend(layer_df.loc[np.invert(inside_limit_bool)].loc[dgpd.from_geopandas(all_points_df,nproc).buffer(layerRef).compute().within(modelDis['limitGeometry'])].get_coordinates().values.tolist())
+    else:
+        filterPointList_Org.extend(layer_df.loc[np.invert(inside_limit_bool)].loc[all_points_df.buffer(layerRef).within(modelDis['limitGeometry'])].get_coordinates().values.tolist())
+    
+    # Interpolate new vertices
+    layer_interp_df = layer_df.segmentize(layerRef)
+    filterPointListGeom = layer_interp_df.loc[inside_limit_bool].geometry.values.tolist()
+    filterPointList_Dist = layer_interp_df.loc[inside_limit_bool].get_coordinates().to_numpy().tolist()
+    
+    point_df = layer_interp_df.loc[np.invert(inside_limit_bool)].get_coordinates()
+    all_distpoints_df = gpd.GeoDataFrame(point_df.index.values,columns=['org_ind'],geometry=gpd.points_from_xy(point_df['x'],point_df['y']))
+    if use_dask:
+        keep_distpoints_df = all_distpoints_df.loc[dgpd.from_geopandas(all_distpoints_df,nproc).buffer(layerRef).compute().within(modelDis['limitGeometry'])]
+    else:
+        keep_distpoints_df = all_distpoints_df.loc[all_distpoints_df.buffer(layerRef).within(modelDis['limitGeometry'])]
+    
+    keep_distpoints_df['geom_type'] = layer_df.geom_type.values[keep_distpoints_df['org_ind'].values]
+    filterPointList_Dist.extend(keep_distpoints_df.get_coordinates().to_numpy().tolist())
+    filterPointListGeom.extend(keep_distpoints_df.groupby('org_ind')[['geometry','geom_type']].apply(makeGeometry).values.tolist()) # remake polygons from remaining points
+    
+    return filterPointList_Org, filterPointList_Dist, filterPointListGeom
+
+def save_zip(mesh_obj,out_fname,compresslevel=9):
+    # source: https://stackoverflow.com/a/57758563
+    with gzip.open(out_fname,'wt',encoding='UTF-8',compresslevel=compresslevel) as fout:
+        json.dump(mesh_obj.disvDict,fout)
+        
+
+def read_zip(in_fname):
+    # source: https://stackoverflow.com/a/57758563
+    with gzip.open(in_fname,'rt',encoding='UTF-8') as fin:
+        data = json.load(fin)
+    
+    return data
+
+def getPolygonAndInteriors(polyGeom):
+    exteriorInteriorPolys = [polyGeom] + [Polygon(ring) for ring in polyGeom.interiors]
+    return exteriorInteriorPolys
+
+def makeGeometry(geom_df,geom_col='geometry',gtype_col='geom_type'):
+    
+    starting_geom_type = geom_df[gtype_col].iloc[0]
+    geom_in = geom_df[geom_col].values
+    
+    points = [p.coords[0] for p in geom_in]
+    
+    if starting_geom_type == 'Polygon' and len(points) > 2:
+        out_geom = Polygon(points)
+    elif len(points) > 1:  #len(filterPointList) > 1:
+        out_geom = LineString(points)
+    elif len(points) == 1: #len(filterPointList) == 1:
+        out_geom = Point(points)
+    else:
+        out_geom = None
+    return out_geom
+
+# ----------------------------------------/
 
 def readShpFromZip(file):
     zipshp = io.BytesIO(open(file, 'rb').read())
@@ -16,17 +137,6 @@ def readShpFromZip(file):
         crs = src.crs
         gdf = gpd.GeoDataFrame.from_features(src, crs=crs)
     return gdf
-
-def writeShpAsZip(zipLoc,zipDest,baseName):
-    shutil.make_archive(base_dir=zipLoc,
-        root_dir=zipDest,
-        format='zip',
-        base_name=baseName)
-
-def shpFromZipAsFiona(file):
-    zipshp = io.BytesIO(open(file, 'rb').read())
-    fionaObj = fiona.BytesCollection(zipshp.read())
-    return fionaObj
 
 
 def remove_files_and_folder(path_to_file, folder=True):
@@ -79,73 +189,6 @@ def intersectLimitLayer(discLayerGeom, modelDis):
         unaryFilter = [unaryGeom]
 
     return unaryFilter    
-
-def processVertexFilterCloseLimit(layerRef,layerGeom,modelDis,vertexType):
-    #first conditional
-    if vertexType == 'Org':
-        if layerGeom.geom_type == 'Polygon':
-            pointObject = layerGeom.exterior.coords.xy
-            pointList = list(zip(pointObject[0],pointObject[1]))
-        elif layerGeom.geom_type == 'LineString':
-            pointObject = layerGeom.coords.xy
-            pointList = list(zip(pointObject[0],pointObject[1]))
-        elif layerGeom.geom_type == 'Point':
-            #covered in the third conditional
-            pass
-        else:
-            print('Something went wrong with the org vertex')
-    elif vertexType == 'Dist':
-        pointList = []
-        if layerGeom.geom_type == 'Polygon':
-            polyLength = layerGeom.exterior.length
-            pointProg = np.arange(0,polyLength,layerRef)
-            for prog in pointProg:
-                pointXY = list(layerGeom.exterior.interpolate(prog).xy)
-                pointList.append([pointXY[0][0],pointXY[1][0]])
-        elif layerGeom.geom_type == 'LineString':
-            lineLength = layerGeom.length
-            pointProg = np.arange(0,lineLength,layerRef)
-            for prog in pointProg:
-                pointXY = list(layerGeom.interpolate(prog).xy)
-                pointList.append([pointXY[0][0],pointXY[1][0]])
-        elif layerGeom.geom_type == 'Point':
-            #covered in the third conditional
-            pass
-        else:
-            print('Something went wrong with the dist vertex')
-
-    #second conditional
-    if layerGeom.geom_type == 'Polygon' or layerGeom.geom_type == 'LineString':
-        if layerGeom.buffer(layerRef).within(modelDis['limitGeometry']):
-            filterPointList = pointList
-        else:
-            filterPointList = []
-            for point in pointList:
-                pointPoint = Point(point)
-                if pointPoint.buffer(layerRef).within(modelDis['limitGeometry']):
-                    filterPointList.append(point)
-        
-        if layerGeom.geom_type == 'Polygon' and len(filterPointList) > 2:
-            filterPointListGeom = Polygon(filterPointList)
-        elif len(filterPointList) > 1:
-            filterPointListGeom = LineString(filterPointList)
-        elif len(filterPointList) == 1:
-            filterPointListGeom = Point(filterPointList)
-        else:
-            filterPointListGeom = None
-
-    #third conditional
-    elif layerGeom.geom_type == 'Point':
-        pointObject = layerGeom.coords.xy
-        point = (pointObject[0][0],pointObject[1][0])
-        if layerGeom.buffer(layerRef).within(modelDis['limitGeometry']):
-            filterPointList = [point]
-            filterPointListGeom = layerGeom
-        else:
-            filterPointList = []
-            filterPointListGeom = None
-
-    return filterPointList, filterPointListGeom 
 
 def getFionaDictPoly(polyGeom, index):
     polyCoordList = []
@@ -376,3 +419,4 @@ KkQ6'     '2QO}vc/:&QDa}75L<2Qgx="= .nQMCv)%I"UUQ81}j57>SQhi=|; .dQA'         %Q
 /jJ>       82mw[i: /zmVFa|  ;t53j}+  `1mVpn!>_ UuSh21/  =oFy7{; .z#I          .nm57r/.       
                                                                                                                                                                                                                                       
 ''')
+# %%

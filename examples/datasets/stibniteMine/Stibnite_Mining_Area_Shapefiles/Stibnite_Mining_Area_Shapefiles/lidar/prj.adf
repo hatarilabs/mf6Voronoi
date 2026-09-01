@@ -1,9 +1,0 @@
-Projection    STATEPLANE
-Fipszone      1103
-Datum         NAD27
-Spheroid      CLARKE1866
-Units         FEET
-Zunits        NO
-Xshift        0.0
-Yshift        0.0
-Parameters    

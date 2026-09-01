@@ -9,17 +9,27 @@ import fiona
 from tqdm import tqdm
 from shapely.ops import split, unary_union, voronoi_diagram
 import geopandas as gpd
+# /--------------- try to import dask_geopandas
+try:
+  import dask_geopandas as dgpd
+  HAS_DASK = True
+except ImportError:
+  dgpd = None
+  HAS_DASK = False
+# ----------------/
 from shapely.geometry import Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon, mapping
 from collections import OrderedDict
-from .utils import (processVertexFilterCloseLimit, 
-                    intersectLimitLayer, 
+from .utils import (intersectLimitLayer, 
                     isMultiGeometry,
                     isRunningInJupyter, 
                     printBannerHtml, 
-                    printBannerText)
+                    printBannerText,
+                    xy_in_poly, # \/ KMB additions \/
+                    processVertexFilterCloseLimitDf,
+                    getPolygonAndInteriors)
 
 class createVoronoi():
-    def __init__(self, meshName, maxRef, multiplier, overlapping=True):
+    def __init__(self, meshName, maxRef, multiplier, overlapping=True, use_dask=False, nproc=1):
         #self.discGeoms = {}
         self.modelDis = {}
         self.modelDis['meshName'] = meshName
@@ -27,6 +37,9 @@ class createVoronoi():
         self.modelDis['multiplier'] = multiplier
         self.overlapping = overlapping
         self.discLayers = {}
+        self.settings = {
+            'use_dask': use_dask,
+            'nproc': nproc} # number of processors to use
 
     def addLimit(self, name, shapePath):
         #Create the model limit
@@ -67,61 +80,39 @@ class createVoronoi():
         self.discLayers[layerName] = {'layerRef':layerRef,
                                       'layerGeoms':[]}  
 
-        #looping over the shapefile
-        i = 1
-        for spatialIndex, spatialRow in spatialDf.iterrows():
-            if spatialRow.geometry.is_valid:
-                geomGeom = spatialRow.geometry
-                #get the layer type
-                if i==1:
-                    self.discLayers[layerName]['layerType'] = geomGeom.geom_type
-                    i+=1
-                #intersect with the limit layer
-                unaryFilter = intersectLimitLayer(geomGeom, self.modelDis)
-                if unaryFilter:
-                    #if not unaryFilter.is_empty:
-                    self.discLayers[layerName]['layerGeoms'] += unaryFilter
-            else:
-                print('You are working with a uncompatible geometry. Remember to use single parts')
-                print('Check this file: %s \n'%shapePath)
-                sys.exit()
+        # // -------------- KMB --------------
+        # find intersection with limit layer
+        if self.settings['use_dask']:
+            unaryFilter = dgpd.from_geopandas(spatialDf,self.settings['nproc']).intersection(self.modelDis['limitGeometry']).compute()
+        else:
+            unaryFilter = spatialDf.intersection(self.modelDis['limitGeometry'])
+        
+        # Remove empty geometries after intersection
+        unaryFilter = unaryFilter[~unaryFilter.is_empty]
+        
+        # keep intersection geometries as a list and explode multipolygons
+        self.discLayers[layerName]['layerGeoms'] = unaryFilter.explode().tolist()
+        
+        # store geometry type
+        self.discLayers[layerName]['layerType'] = spatialDf.iloc[0].geometry.geom_type
+        
+        if len(self.discLayers[layerName]['layerType']) == 0:
+            print('You are working with a incompatible geometry. Remember to use single parts')
+            print('Check this file: %s \n'%shapePath)
+            sys.exit()
+        # -------------- KMB -------------- //
             
-    #def orgVertexAsList(self, layerGeoms, layerRef):
-    def orgVertexAsList(self, layer):
-        #get only the original vertices inside the model limit
-        vertexList = []
-        layerGeoms = self.discLayers[layer]['layerGeoms']
-        layerRef = self.discLayers[layer]['layerRef']
-
-        for layerGeom in layerGeoms:
-            filterPointList = processVertexFilterCloseLimit(layerRef,layerGeom,self.modelDis,'Org')
-            if filterPointList != None:
-                vertexList += filterPointList
-            else:
-                print('/-----Problem has been bound when extracting org vertex-----/')
-
-        return vertexList
-
-    def distributedVertexAsList(self, layer):
-        #distribute vertices along the layer paths
-        vertexList = []
-        vertexGeomList = []
-        layerGeoms = self.discLayers[layer]['layerGeoms']
-        layerRef = self.discLayers[layer]['layerRef']
-
-        for layerGeom in layerGeoms:
-            filterPointList, filterPointGeom = processVertexFilterCloseLimit(layerRef,layerGeom,self.modelDis,'Dist')
-            if filterPointGeom != None:
-                vertexList += filterPointList
-                vertexGeomList.append(filterPointGeom)
-        return vertexList, vertexGeomList
 
     def generateOrgDistVertices(self, txtFile=''):
         vertexOrgPairList = []
         for layer, values in self.discLayers.items():
-            vertexOrgPairList += self.orgVertexAsList(layer)
-            self.modelDis['vertexDist'][layer] = self.distributedVertexAsList(layer)[0]
-            self.modelDis['vertexDistGeoms'][layer] = self.distributedVertexAsList(layer)[1]
+            vOPL, vertexList, vertexGeomList = processVertexFilterCloseLimitDf(self.discLayers[layer]['layerRef'],
+                                                                              self.discLayers[layer]['layerGeoms'],
+                                                                              self.modelDis,
+                                                                              use_dask=self.settings['use_dask'],nproc=self.settings['nproc'])
+            vertexOrgPairList += vOPL
+            self.modelDis['vertexDist'][layer] = vertexList
+            self.modelDis['vertexDistGeoms'][layer] = vertexGeomList
         self.modelDis['vertexOrg'] = vertexOrgPairList
 
         if txtFile != '':
@@ -179,7 +170,7 @@ class createVoronoi():
         
         return circleUnionExtWithIntMpoly, circleUnionExtIntMpoly, polyPointList
 
-    def generateAllCircles(self):
+    def generateAllCircles(self, verbose=True):
         partialCircleUnionList = []
         partialCircleUnionInteriorList = []    
 
@@ -202,16 +193,20 @@ class createVoronoi():
                     break
                 i+=1
 
-            self.discLayers[layer]['layerSpaceList'] = cellSizeList           
-            print('\n/--------Layer %s discretization-------/'%layer)
-            print('Progressive cell size list: %s m.'%str(cellSizeList))
+            self.discLayers[layer]['layerSpaceList'] = cellSizeList
+
+            if verbose:        # KMB     
+                print('\n/--------Layer %s discretization-------/'%layer)
+                print('Progressive cell size list: %s m.'%str(cellSizeList))
 
             #looping
             for index, cellSize in enumerate(cellSizeList):
-                circleUnionInteriors, circleUnion, polyPointList = self.circlesAroundRefPoints(layer,index,cellSize)
+                # KMB - only run circleUnionInterios and circleUnion calculations for last index
+                last_index_bool = cellSize == np.array(cellSizeList).max()
+                circleUnionInteriors, circleUnion, polyPointList = self.circlesAroundRefPoints(layer,last_index_bool,cellSize)
                 self.modelDis['vertexBuffer'] += polyPointList
                 #for the last discretization
-                if cellSize == np.array(cellSizeList).max():
+                if last_index_bool: # KMB
                     #self.modelDis['circleUnion'] = circleUnion
                     partialCircleUnionList.append(circleUnion)
                     partialCircleUnionInteriorList.append(circleUnionInteriors)
@@ -226,8 +221,7 @@ class createVoronoi():
         self.modelDis['circleUnion'] = totalCircleUnion
         self.modelDis['circleUnionInteriors'] = totalCircleUnionInteriors
 
-    def getPointsMinMaxRef(self):
-
+    def getPointsMinMaxRef(self, verbose=True): # KMB, could also set verbose   at Class level and add to self.settings
         #define refs
         maxRef = self.modelDis['maxRef']
 
@@ -246,122 +240,169 @@ class createVoronoi():
         outerPoly = self.modelDis['limitGeometry']
         limitPoly = copy.copy(outerPoly)
         innerPolys = self.modelDis['circleUnionInteriors']
+        
+        # -------------- KMB --------------, similiarities in parts, but easier to separate entirely for now
 
-        #working with circle unions
-        if isMultiGeometry(innerPolys):
-            for poly in innerPolys.geoms:
-                transPoly = outerPoly.difference(poly)
-                if limitPoly.area == transPoly.area:
-                    outerPoly.geom.interior += poly
-                elif limitPoly.area > transPoly.area:
-                    outerPoly = transPoly
-        else:
-            transPoly = outerPoly.difference(innerPolys)
-            self.modelDis['tempPoly']=transPoly
-            if limitPoly.area == transPoly.area:
-                outerPoly.geom.interior += transPoly
-            elif limitPoly.area > transPoly.area:
-                outerPoly = transPoly
-
+        innerPolys_df = gpd.GeoDataFrame([0],columns=['id'],geometry=[innerPolys]).explode()
+        if verbose:
+            print("Find maxiumum reference points") 
+        
+        innerPolys_ext_bool = innerPolys_df.intersects(outerPoly.exterior)
+        all_diffs_df = innerPolys_df[innerPolys_ext_bool].copy()
+        all_interiors = innerPolys_df[~innerPolys_ext_bool].geometry.values.tolist()
+        
+        if verbose:
+            print("Find maxiumum reference points, disc polys") # slow
+        
         #working with mesh disc polys
         for key, value in self.discLayers.items():
-            for layerGeom in value['layerGeoms']:
-                if layerGeom.geom_type == 'Polygon':
-                    transPoly = outerPoly.difference(layerGeom)
-                    if limitPoly.area == transPoly.area:
-                        outerPoly.geom.interior += layerGeom
-                    elif limitPoly.area > transPoly.area:
-                        outerPoly = outerPoly.difference(layerGeom)
-                                 
-        #exporting final clipped polygon geometry                         
+            
+            layer_df = gpd.GeoDataFrame(np.arange(len(value['layerGeoms'])),columns=['id'],geometry=value['layerGeoms'])
+            
+            if verbose:
+                print("Collect interior geometries, disc polys")
+            
+            # Identify interior geometries and add as interiors to outerPoly
+            if self.settings['use_dask']:
+                within_bool = dgpd.from_geopandas(layer_df,self.settings['nproc']).within(limitPoly).compute()
+                internal_df = layer_df.loc[within_bool]
+                
+                # Unify overlapping polygons so only largest internal geometries exist
+                internal_geoms = dgpd.from_geopandas(internal_df,self.settings['nproc']).union_all().compute()
+                
+            else:
+                within_bool = layer_df.within(limitPoly)
+                internal_geoms = layer_df.loc[within_bool].union_all()
+        
+        # Need to add interiors
+        all_interiors.extend([internal_geoms])
+        outerPoly = outerPoly.difference(unary_union(all_interiors)).buffer(0) # buffer to fix invalid issues
+        
+        if verbose:
+            print("Update outerPoly by removing intersecting layer geometries, disc polys")
+        
+        outer_df = gpd.GeoDataFrame([0],columns=['id'],geometry=[outerPoly]).explode()
+        
+        # Update outerPoly to have edge geometries cut out of it
+        edge_df = layer_df.loc[np.invert(within_bool.values)] # if not within, then must intersect
+        
+        # Add inner rings that intersect outerPoly to reduce its size
+        edge_df = gpd.pd.concat([edge_df,all_diffs_df],ignore_index=True)
+        
+        if self.settings['use_dask']:
+            edge_geom = dgpd.from_geopandas(edge_df,self.settings['nproc']).union_all().compute().buffer(0)
+            temp_df = outer_df.difference(edge_geom)
+            outerPoly = dgpd.from_geopandas(temp_df,self.settings['nproc']).union_all().compute()
+        else:
+            edge_geom = edge_df.union_all().buffer(0)
+            temp_df = outer_df.difference(edge_geom)
+            outerPoly = temp_df.union_all()
+            
         self.modelDis['pointsMaxRefPoly']=outerPoly
 
         #creating points of coarse grid
         maxRefXList = np.arange(self.modelDis['xMin']+minRef,self.modelDis['xMax'],maxRef)
         maxRefYList = np.arange(self.modelDis['yMin']+minRef,self.modelDis['yMax'],maxRef)
-
-        for xCoord in maxRefXList:
-            for yCoord in maxRefYList:
-                refPoint = Point(xCoord,yCoord)
-                if outerPoly.contains(refPoint):
-                    self.modelDis['vertexMaxRef'].append((xCoord,yCoord))
-
-        self.modelDis['pointsMaxRefPoly']=outerPoly
-
+        
+        maxX,maxY = np.meshgrid(maxRefXList,maxRefYList)
+        
+        self.modelDis['vertexMaxRef'] = xy_in_poly(np.column_stack([maxX.ravel(),maxY.ravel()]).tolist(),outerPoly,
+                                            use_dask=self.settings['use_dask'], nproc=self.settings['nproc'])
         #for min ref points
+        if verbose:
+            print('Find minimum reference points') # slow
+            
         for key, value in self.discLayers.items():
-            for layerGeom in value['layerGeoms']:
-                if layerGeom.geom_type == 'Polygon':
-                    bounds = layerGeom.exterior.bounds
-                    minRefXList = np.arange(bounds[0]+value['layerRef'],bounds[2],value['layerRef'])
-                    minRefYList = np.arange(bounds[1]+value['layerRef'],bounds[3],value['layerRef'])
-
-                    for xCoord in minRefXList:
-                        for yCoord in minRefYList:
-                            refPoint = Point(xCoord,yCoord)
-                            if layerGeom.contains(refPoint):
-                                self.modelDis['vertexMinRef'].append((xCoord,yCoord))
-
-    def createPointCloud(self):
+            
+            layer_df = gpd.GeoDataFrame(np.arange(len(value['layerGeoms'])),columns=['id'],geometry=value['layerGeoms'])
+            all_bound = layer_df.bounds.values
+            layerRef = value['layerRef']
+            
+            multipt_list = [MultiPoint(np.column_stack(list(map(np.ravel,np.meshgrid(np.arange(bounds[0]+layerRef,bounds[2],layerRef),
+                                                np.arange(bounds[1]+layerRef,bounds[3],layerRef))))).tolist()) for bounds in all_bound]
+        
+            more_points_needed = [not igeom.is_empty for igeom in multipt_list]
+            multipt_list = [mp for imp,mp in enumerate(multipt_list) if more_points_needed[imp]] # select only needed multipoints
+            
+            layer_df = layer_df.iloc[more_points_needed]
+            
+            multipt_df = gpd.GeoDataFrame(geometry=multipt_list)
+            self.modelDis['vertexMinRef'].extend(multipt_df.intersection(layer_df,align=False).get_coordinates().values.tolist())         
+    # -------------- KMB --------------//    
+ 
+    
+    def createPointCloud(self, verbose=True): 
         start = time.time()
         #Generate all circles and points on circle paths
         self.generateAllCircles()
         #Distribute points over the max and min refinement areas
         self.getPointsMinMaxRef()
         #Compile all points
-        totalRawPoints = []
-        #totalRawPoints += self.modelDis['vertexDist']
-        for key in self.modelDis['vertexDist']:
-            totalRawPoints += self.modelDis['vertexDist'][key]
-        totalRawPoints += self.modelDis['vertexBuffer']
-        totalRawPoints += self.modelDis['vertexMaxRef']
-        totalRawPoints += self.modelDis['vertexMinRef']
-        totalDefPoints = []
+        # //------------------------ KMB
+        totalRawPoints = [np.array(self.modelDis['vertexDist'][key]) for key in self.modelDis['vertexDist'] if len(self.modelDis['vertexDist'][key])>0]
+
+        if len(self.modelDis['vertexBuffer'])>0:
+            totalRawPoints.append(np.array(self.modelDis['vertexBuffer']))
+        
+        if len(self.modelDis['vertexMaxRef'])>0:
+            totalRawPoints.append(np.array(self.modelDis['vertexMaxRef']))
+        
+        if len(self.modelDis['vertexMinRef'])>0:
+            totalRawPoints.append(np.array(self.modelDis['vertexMinRef']))
 
         #check if points are inside limit polygon
-        for point in totalRawPoints:
-            refPoint = Point(point[0],point[1])
-            if self.modelDis['limitGeometry'].contains(refPoint):
-                totalDefPoints.append(point)
-        self.modelDis['vertexTotal'] = totalDefPoints  
-        print('\n/----Sumary of points for voronoi meshing----/')
-        print('Distributed points from layers: %d'%len(self.modelDis['vertexDist']))
-        print('Points from layer buffers: %d'%len(self.modelDis['vertexBuffer']))
-        print('Points from max refinement areas: %d'%len(self.modelDis['vertexMaxRef']))
-        print('Points from min refinement areas: %d'%len(self.modelDis['vertexMinRef']))
-        print('Total points inside the limit: %d'%len(self.modelDis['vertexTotal']))
-        print('/--------------------------------------------/')
-        end = time.time()
-        print('\nTime required for point generation: %.2f seconds \n'%(end - start), flush=True)
+        points_array = np.vstack(totalRawPoints)
+        totalDefPoints = xy_in_poly(points_array.tolist(),self.modelDis['limitGeometry'],
+                                    use_dask=self.settings['use_dask'], nproc=self.settings['nproc'])
+        # -------------- KMB -------------- //
 
-    def generateVoronoi(self):
+        self.modelDis['vertexTotal'] = totalDefPoints  
+
+
+        if verbose: #KMB
+            print('\n/----Sumary of points for voronoi meshing----/')
+            print('Distributed points from layers: %d'%len(self.modelDis['vertexDist']))
+            print('Points from layer buffers: %d'%len(self.modelDis['vertexBuffer']))
+            print('Points from max refinement areas: %d'%len(self.modelDis['vertexMaxRef']))
+            print('Points from min refinement areas: %d'%len(self.modelDis['vertexMinRef']))
+            print('Total points inside the limit: %d'%len(self.modelDis['vertexTotal']))
+            print('/--------------------------------------------/')
+            end = time.time()
+            print('\nTime required for point generation: %.2f seconds \n'%(end - start), flush=True)
+
+
+    def generateVoronoi(self, shapePath=None):
         print('\n/----Generation of the voronoi mesh----/')
         start = time.time()
         #create a multipoint object
         pointMulti = MultiPoint(self.modelDis['vertexTotal'])
         #original regions
         regions = voronoi_diagram(pointMulti)
-        #object for clipped regions
-        clippedRegions = []
-        #loop over all polygons
-        for region in regions.geoms:
-            #for contained polygons
-            if self.modelDis['limitGeometry'].contains(region):
-                clippedRegions.append(region)
-            #for intersected polygons
-            else:
-                regionDiff = region.intersection(self.modelDis['limitGeometry'])
-                #check for clipped region as multipolygon
-                if regionDiff.geom_type == 'Polygon':
-                    clippedRegions.append(regionDiff)
-                elif regionDiff.geom_type == 'MultiPolygon':
-                    clippedRegions.extend(list(regionDiff.geoms))
-                else: print('Something went wrong')
 
+        # // -----------------KMB
+        layer_df = gpd.GeoDataFrame(np.arange(len(regions.geoms)),columns=['id'],geometry=list(regions.geoms),crs=self.modelDis['crs'])
+        
+        # Update geometries intersecting limit polygon
+        if self.settings['use_dask']:
+            intersecting_bool = dgpd.from_geopandas(layer_df,self.settings['nproc']).intersects(self.modelDis['limitGeometry'].exterior).compute()
+            layer_df.loc[intersecting_bool,'geometry'] = dgpd.from_geopandas(layer_df.loc[intersecting_bool],self.settings['nproc']).intersection(self.modelDis['limitGeometry']).compute()
+        else:
+            intersecting_bool = layer_df.intersects(self.modelDis['limitGeometry'].exterior)
+            layer_df.loc[intersecting_bool,'geometry'] = layer_df.loc[intersecting_bool].intersection(self.modelDis['limitGeometry'])
+
+        #clippedRegions = layer_df.explode(index_parts=False).geometry.values.tolist()
+        # --- FIX: Explode GeoSeries directly and filter empty geometries ---
+        exploded_geoms = layer_df.geometry.explode(ignore_index=True)
+        clippedRegions = exploded_geoms[~exploded_geoms.is_empty].tolist()
+        
         clippedRegionsMulti = MultiPolygon(clippedRegions)
         self.modelDis['voronoiRegions'] = clippedRegionsMulti
         end = time.time()
         print('\nTime required for voronoi generation: %.2f seconds \n'%(end - start), flush=True)
+
+        if shapePath is not None: # option to save shapefile directly
+            layer_df = gpd.GeoDataFrame(np.arange(len(clippedRegions)),columns=['id'],geometry=clippedRegions,crs=self.modelDis['crs'])
+            layer_df.to_file(shapePath)
 
     def checkVoronoiQuality(self, threshold = 0.001):
         print('\n/----Performing quality verification of voronoi mesh----/')
