@@ -1,0 +1,17 @@
+{
+    "c1_regionalAngascancha": {
+        "maxRef": 200,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "catchment.shp"
+        },
+        "layerLayer": [
+            [
+                "river",
+                "river_basin.shp",
+                50
+            ]
+        ]
+    }    
+}

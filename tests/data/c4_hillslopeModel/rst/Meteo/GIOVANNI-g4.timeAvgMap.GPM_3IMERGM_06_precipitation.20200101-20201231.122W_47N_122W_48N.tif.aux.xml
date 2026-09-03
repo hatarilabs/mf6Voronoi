@@ -1,0 +1,83 @@
+<PAMDataset>
+  <Metadata>
+    <MDI key="GPM_3IMERGM_06_precipitation#cell_methods">time: mean</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#CodeMissingValue">-9999.9</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#coordinates">lat lon</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#DimensionNames">time,lon,lat</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#fullnamepath">/Grid/precipitation</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#latitude_resolution">0.099998</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#longitude_resolution">0.099991</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#long_name">Merged satellite-gauge precipitation estimate - Final Run (recommended for general use)</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#origname">precipitation</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#product_short_name">GPM_3IMERGM</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#product_version">06</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#quantity_type">Precipitation</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#standard_name">precipitation</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#units">mm/month</MDI>
+    <MDI key="GPM_3IMERGM_06_precipitation#_FillValue">-9999.9004</MDI>
+    <MDI key="lat#axis">Y</MDI>
+    <MDI key="lat#bounds">lat_bnds</MDI>
+    <MDI key="lat#DimensionNames">lat</MDI>
+    <MDI key="lat#fullnamepath">/Grid/lat</MDI>
+    <MDI key="lat#LongName">Latitude at the center of
+			0.10 degree grid intervals of latitude
+			from -90 to 90.</MDI>
+    <MDI key="lat#origname">lat</MDI>
+    <MDI key="lat#standard_name">latitude</MDI>
+    <MDI key="lat#units">degrees_north</MDI>
+    <MDI key="lon#axis">X</MDI>
+    <MDI key="lon#bounds">lon_bnds</MDI>
+    <MDI key="lon#DimensionNames">lon</MDI>
+    <MDI key="lon#fullnamepath">/Grid/lon</MDI>
+    <MDI key="lon#LongName">Longitude at the center of
+			0.10 degree grid intervals of longitude 
+			from -180 to 180.</MDI>
+    <MDI key="lon#origname">lon</MDI>
+    <MDI key="lon#standard_name">longitude</MDI>
+    <MDI key="lon#units">degrees_east</MDI>
+    <MDI key="NC_GLOBAL#Conventions">CF-1.4</MDI>
+    <MDI key="NC_GLOBAL#end_time">2021-01-01T00:00:00Z</MDI>
+    <MDI key="NC_GLOBAL#history">Sat Jun 26 17:13:13 2021: /usr/bin/ncks -O -x -v time_bnds timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:13:13 2021: /usr/bin/ncatted -a valid_range,,d,, -O -o timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:13:13 2021: /usr/bin/ncatted -O -a title,global,o,c,GPM_3IMERGM_06_precipitation Averaged over 2020-01-01 to 2020-12-31 timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:13:12 2021: /usr/bin/ncks -x -v time -o timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc -O timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:13:12 2021: /usr/bin/ncwa -o timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc -a time -O timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:13:12 2021: /usr/bin/ncra -D 2 -H -O -o timeAvgMap.GPM_3IMERGM_06_precipitation.20200101-20201231.122W_47N_122W_48N.nc -d lat,47.526900,48.153100 -d lon,-122.541500,-122.003200
+Sat Jun 26 17:12:56 2021: /usr/bin/ncap2 -O -S /var/giovanni/session/TEMP/unitsConversion_hbar.ncap2 /var/giovanni/session/06C7E8FC-4110-11EA-9704-678DB96C111D/BA2223B8-D6A1-11EB-B642-939BF9C0E583/BA223ABA-D6A1-11EB-B642-939BF9C0E583///scrubbed.GPM_3IMERGM_06_precipitation.20200101.nc ./uc.scrubbed.GPM_3IMERGM_06_precipitation.20200101.nc</MDI>
+    <MDI key="NC_GLOBAL#NCO">netCDF Operators version 4.7.8 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco)</MDI>
+    <MDI key="NC_GLOBAL#nco_openmp_thread_number">1</MDI>
+    <MDI key="NC_GLOBAL#plot_hint_caption">- Selected date range was 2020-Jan - 2020-Dec. Title reflects the date range of the granules that went into making this result.</MDI>
+    <MDI key="NC_GLOBAL#plot_hint_subtitle">over 2020-Jan - 2021-01-01 00:00:00Z, Region 122.5415W, 47.5269N, 122.0032W, 48.1531N</MDI>
+    <MDI key="NC_GLOBAL#plot_hint_title">Time Averaged Map of Merged satellite-gauge precipitation estimate - Final Run (recommended for general use) monthly 0.1 deg. [GPM GPM_3IMERGM v06] mm/month</MDI>
+    <MDI key="NC_GLOBAL#start_time">2020-01-01T00:00:00Z</MDI>
+    <MDI key="NC_GLOBAL#title">Time Averaged Map of Merged satellite-gauge precipitation estimate - Final Run (recommended for general use) monthly 0.1 deg. [GPM GPM_3IMERGM v06] mm/month over 2020-Jan - 2021-01-01 00:00:00Z, Region 122.5415W, 47.5269N, 122.0032W, 48.1531N</MDI>
+    <MDI key="NC_GLOBAL#userenddate">2020-12-31T23:59:59Z</MDI>
+    <MDI key="NC_GLOBAL#userstartdate">2020-01-01T00:00:00Z</MDI>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <UnitType>mm/month</UnitType>
+    <Metadata>
+      <MDI key="cell_methods">time: mean</MDI>
+      <MDI key="CodeMissingValue">-9999.9</MDI>
+      <MDI key="coordinates">lat lon</MDI>
+      <MDI key="DimensionNames">time,lon,lat</MDI>
+      <MDI key="fullnamepath">/Grid/precipitation</MDI>
+      <MDI key="latitude_resolution">0.099998</MDI>
+      <MDI key="longitude_resolution">0.099991</MDI>
+      <MDI key="long_name">Merged satellite-gauge precipitation estimate - Final Run (recommended for general use)</MDI>
+      <MDI key="NETCDF_VARNAME">GPM_3IMERGM_06_precipitation</MDI>
+      <MDI key="origname">precipitation</MDI>
+      <MDI key="product_short_name">GPM_3IMERGM</MDI>
+      <MDI key="product_version">06</MDI>
+      <MDI key="quantity_type">Precipitation</MDI>
+      <MDI key="standard_name">precipitation</MDI>
+      <MDI key="STATISTICS_MAXIMUM">140.47286987305</MDI>
+      <MDI key="STATISTICS_MEAN">125.07660936628</MDI>
+      <MDI key="STATISTICS_MINIMUM">108.61236572266</MDI>
+      <MDI key="STATISTICS_STDDEV">10.37242147867</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+      <MDI key="units">mm/month</MDI>
+      <MDI key="_FillValue">-9999.9004</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

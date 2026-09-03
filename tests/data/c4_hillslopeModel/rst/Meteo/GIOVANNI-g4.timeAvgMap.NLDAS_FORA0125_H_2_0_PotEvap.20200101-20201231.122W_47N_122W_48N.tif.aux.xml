@@ -1,0 +1,73 @@
+<PAMDataset>
+  <Metadata>
+    <MDI key="lat#bounds">lat_bnds</MDI>
+    <MDI key="lat#missing_value">-9999</MDI>
+    <MDI key="lat#standard_name">latitude</MDI>
+    <MDI key="lat#units">degrees_north</MDI>
+    <MDI key="lat#vmax">52.9375</MDI>
+    <MDI key="lat#vmin">25.0625</MDI>
+    <MDI key="lat#_FillValue">-9999</MDI>
+    <MDI key="lon#bounds">lon_bnds</MDI>
+    <MDI key="lon#missing_value">-9999</MDI>
+    <MDI key="lon#standard_name">longitude</MDI>
+    <MDI key="lon#units">degrees_east</MDI>
+    <MDI key="lon#vmax">-67.0625</MDI>
+    <MDI key="lon#vmin">-124.9375</MDI>
+    <MDI key="lon#_FillValue">-9999</MDI>
+    <MDI key="NC_GLOBAL#Conventions">CF-1.4</MDI>
+    <MDI key="NC_GLOBAL#end_time">2020-12-31T23:00:00Z</MDI>
+    <MDI key="NC_GLOBAL#history">Sat Jun 26 17:28:59 2021: /usr/bin/ncks -O -x -v time_bnds timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:28:59 2021: /usr/bin/ncatted -a valid_range,,d,, -O -o timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:28:59 2021: /usr/bin/ncatted -O -a title,global,o,c,NLDAS_FORA0125_H_2_0_PotEvap Averaged over 2020-01-01 to 2020-12-31 timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:28:59 2021: /usr/bin/ncks -x -v time -o timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc -O timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:28:59 2021: /usr/bin/ncwa -o timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc -a time -O timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc
+Sat Jun 26 17:28:08 2021: /usr/bin/ncra -D 2 -H -O -o timeAvgMap.NLDAS_FORA0125_H_2_0_PotEvap.20200101-20201231.122W_47N_122W_48N.nc -d lat,47.526900,48.153100 -d lon,-122.541500,-122.003200</MDI>
+    <MDI key="NC_GLOBAL#NCO">netCDF Operators version 4.7.8 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco)</MDI>
+    <MDI key="NC_GLOBAL#plot_hint_caption">- Selected date range was 2020-01-01 00Z - 2020-12-31 23Z. Title reflects the date range of the granules that went into making this result.</MDI>
+    <MDI key="NC_GLOBAL#plot_hint_subtitle">over 2019-12-31 23Z - 2020-12-31 23:00:00Z, Region 122.5415W, 47.5269N, 122.0032W, 48.1531N</MDI>
+    <MDI key="NC_GLOBAL#plot_hint_title">Time Averaged Map of Potential evaporation hourly 0.125 deg. [NLDAS Model NLDAS_FORA0125_H v2.0] kg m-2</MDI>
+    <MDI key="NC_GLOBAL#start_time">2019-12-31T23:00:00Z</MDI>
+    <MDI key="NC_GLOBAL#title">Time Averaged Map of Potential evaporation hourly 0.125 deg. [NLDAS Model NLDAS_FORA0125_H v2.0] kg m-2 over 2019-12-31 23Z - 2020-12-31 23:00:00Z, Region 122.5415W, 47.5269N, 122.0032W, 48.1531N</MDI>
+    <MDI key="NC_GLOBAL#userenddate">2020-12-31T23:59:59Z</MDI>
+    <MDI key="NC_GLOBAL#userstartdate">2020-01-01T00:00:00Z</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#cell_methods">time: sum time: mean</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#coordinates">lat lon</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#latitude_resolution">0.125</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#longitude_resolution">0.125</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#long_name">Potential evaporation</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#missing_value">-9999</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#product_short_name">NLDAS_FORA0125_H</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#product_version">2.0</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#quantity_type">Evaporation</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#standard_name">Potential evaporation</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#units">kg m-2</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#vmax">0.65149999</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#vmin">-0.21069999</MDI>
+    <MDI key="NLDAS_FORA0125_H_2_0_PotEvap#_FillValue">-9999</MDI>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <UnitType>kg m-2</UnitType>
+    <Metadata>
+      <MDI key="cell_methods">time: sum time: mean</MDI>
+      <MDI key="coordinates">lat lon</MDI>
+      <MDI key="latitude_resolution">0.125</MDI>
+      <MDI key="longitude_resolution">0.125</MDI>
+      <MDI key="long_name">Potential evaporation</MDI>
+      <MDI key="missing_value">-9999</MDI>
+      <MDI key="NETCDF_VARNAME">NLDAS_FORA0125_H_2_0_PotEvap</MDI>
+      <MDI key="product_short_name">NLDAS_FORA0125_H</MDI>
+      <MDI key="product_version">2.0</MDI>
+      <MDI key="quantity_type">Evaporation</MDI>
+      <MDI key="standard_name">Potential evaporation</MDI>
+      <MDI key="STATISTICS_MAXIMUM">0.14237485826015</MDI>
+      <MDI key="STATISTICS_MEAN">0.13337109312415</MDI>
+      <MDI key="STATISTICS_MINIMUM">0.11757998168468</MDI>
+      <MDI key="STATISTICS_STDDEV">0.0070079933303142</MDI>
+      <MDI key="STATISTICS_VALID_PERCENT">100</MDI>
+      <MDI key="units">kg m-2</MDI>
+      <MDI key="vmax">0.65149999</MDI>
+      <MDI key="vmin">-0.21069999</MDI>
+      <MDI key="_FillValue">-9999</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

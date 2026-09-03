@@ -1,4 +1,5 @@
 import geopandas as gpd
+import pandas as pd
 import os, shutil, time, json
 from pathlib import Path
 import io
@@ -60,40 +61,59 @@ def findIndex(var, coordArray, intervalNumber=10):
             break
 
             
-def processVertexFilterCloseLimitDf(layerRef,layer_geoms,modelDis,use_dask=False,nproc=10):
-    
-    layer_df = gpd.GeoDataFrame(np.arange(len(layer_geoms)),columns=['id'],
-                                geometry=layer_geoms)
-    
+def processVertexWithFilterCloseLimitDf(layerRef,layerGeoms,modelDis,use_dask=False,nproc=10):
+    ###### For original ######
+    #create a temporal dataframe for the current layers
+    orgLayerDf = gpd.GeoDataFrame(np.arange(len(layerGeoms)),columns=['id'],geometry=layerGeoms)
+    orgCoords = orgLayerDf.get_coordinates()
+    orgLayerPtsDf = gpd.GeoDataFrame(geometry=gpd.points_from_xy(orgCoords.x, orgCoords.y))
+
     # First collect all geometries within limitGeometry
-    inside_limit_bool = layer_df.buffer(layerRef).within(modelDis['limitGeometry'])
-    filterPointList_Org = layer_df.loc[inside_limit_bool].get_coordinates().values.tolist()
-    
-    # Then check for vertices within limit but buffered circle is on the edge
-    temp_points = layer_df.loc[np.invert(inside_limit_bool)].get_coordinates().values
-    all_points_df = gpd.GeoDataFrame(geometry=gpd.points_from_xy(temp_points[:,0],temp_points[:,1]))
     if use_dask:
-        filterPointList_Org.extend(layer_df.loc[np.invert(inside_limit_bool)].loc[dgpd.from_geopandas(all_points_df,nproc).buffer(layerRef).compute().within(modelDis['limitGeometry'])].get_coordinates().values.tolist())
+        #create a temporal dataframe for the org layers
+        orgLayerPtsInsideLimitBool = dgpd.from_geopandas(orgLayerPtsDf, nproc).buffer(layerRef).within(modelDis['limitGeometry'])
     else:
-        filterPointList_Org.extend(layer_df.loc[np.invert(inside_limit_bool)].loc[all_points_df.buffer(layerRef).within(modelDis['limitGeometry'])].get_coordinates().values.tolist())
-    
-    # Interpolate new vertices
-    layer_interp_df = layer_df.segmentize(layerRef)
-    filterPointListGeom = layer_interp_df.loc[inside_limit_bool].geometry.values.tolist()
-    filterPointList_Dist = layer_interp_df.loc[inside_limit_bool].get_coordinates().to_numpy().tolist()
-    
-    point_df = layer_interp_df.loc[np.invert(inside_limit_bool)].get_coordinates()
-    all_distpoints_df = gpd.GeoDataFrame(point_df.index.values,columns=['org_ind'],geometry=gpd.points_from_xy(point_df['x'],point_df['y']))
+        orgLayerPtsInsideLimitBool = orgLayerPtsDf.buffer(layerRef).within(modelDis['limitGeometry'])
+
+    #these are the points of the geometry that are inside limit geometry 
+    orgPointMask = pd.Series(orgLayerPtsInsideLimitBool).values
+    orgPointList =  orgLayerPtsDf.loc[orgPointMask].get_coordinates().values.tolist()    
+
+    ###### For distributed ######
+    # distLayerDf = orgLayerDf.segmentize(layerRef)
+    # distCoords = distLayerDf.get_coordinates()
+    # distLayerPtsDf = gpd.GeoDataFrame(geometry=gpd.points_from_xy(distCoords.x, distCoords.y))    
+    # --- Distributed Points (Fixed Step Vectorized Interpolation) ---
+    dist_raw_points = []
+    for geom in layerGeoms:
+        if geom.geom_type in ['Polygon', 'MultiPolygon']:
+            # Use boundary/exterior length for polygons
+            boundaries = geom.boundary.geoms if geom.geom_type == 'MultiPolygon' else [geom.exterior]
+            for boundary in boundaries:
+                prog = np.arange(0, boundary.length, layerRef)
+                dist_raw_points.extend(boundary.interpolate(prog))
+        elif geom.geom_type in ['LineString', 'MultiLineString']:
+            lines = geom.geoms if geom.geom_type == 'MultiLineString' else [geom]
+            for line in lines:
+                prog = np.arange(0, line.length, layerRef)
+                dist_raw_points.extend(line.interpolate(prog))
+    distLayerPtsDf = gpd.GeoDataFrame(geometry=dist_raw_points, crs=modelDis.get('crs'))
+
+    # First collect all geometries within limitGeometry
     if use_dask:
-        keep_distpoints_df = all_distpoints_df.loc[dgpd.from_geopandas(all_distpoints_df,nproc).buffer(layerRef).compute().within(modelDis['limitGeometry'])]
+        #create a temporal dataframe for the dist layers
+        distLayerPtsInsideLimitBool = dgpd.from_geopandas(distLayerPtsDf, nproc).buffer(layerRef).within(modelDis['limitGeometry'])
     else:
-        keep_distpoints_df = all_distpoints_df.loc[all_distpoints_df.buffer(layerRef).within(modelDis['limitGeometry'])]
+        distLayerPtsInsideLimitBool = distLayerPtsDf.buffer(layerRef).within(modelDis['limitGeometry'])
+
+    #these are the points of the geometry that are inside limit geometry 
+    distPointMask = pd.Series(distLayerPtsInsideLimitBool).values
+    distPointList =  distLayerPtsDf.loc[distPointMask].get_coordinates().values.tolist() 
+
+    # Return list of Shapely Point geometries
+    distPointList_asGeom = distLayerPtsDf.loc[distPointMask, 'geometry'].tolist()
     
-    keep_distpoints_df['geom_type'] = layer_df.geom_type.values[keep_distpoints_df['org_ind'].values]
-    filterPointList_Dist.extend(keep_distpoints_df.get_coordinates().to_numpy().tolist())
-    filterPointListGeom.extend(keep_distpoints_df.groupby('org_ind')[['geometry','geom_type']].apply(makeGeometry).values.tolist()) # remake polygons from remaining points
-    
-    return filterPointList_Org, filterPointList_Dist, filterPointListGeom
+    return orgPointList, distPointList, distPointList_asGeom
 
 def save_zip(mesh_obj,out_fname,compresslevel=9):
     # source: https://stackoverflow.com/a/57758563
@@ -256,33 +276,49 @@ def getVoronoiAsShp(modelDis, shapePath=''):
     end = time.time()
     print('\nTime required for voronoi shapefile: %.2f seconds \n'%(end - start), flush=True)
 
-def getPolyAsShp(modelDis,circleList,shapePath=''):
-    start = time.time()
-    schema_props = OrderedDict([("id", "str")])
-    schema={"geometry": "Polygon", "properties": schema_props}
-    
-    outFile = fiona.open(shapePath,mode = 'w',driver = 'ESRI Shapefile',
-                        crs = modelDis['crs'], schema=schema)
-    
-    if isinstance(modelDis[circleList], dict):
-        for key, value in modelDis[circleList].items():
-            if isMultiGeometry(value):
-                for index, poly in enumerate(value.geoms):
-                    feature = getFionaDictPoly(poly, index)
-                    outFile.write(feature)
+def getPolyAsShp(modelDis, circleList, shapePath=''):
+  """Exports polygon geometries from modelDis to a Shapefile using GeoPandas.
 
-    if isMultiGeometry(modelDis[circleList]):
-        for index, poly in enumerate(modelDis[circleList].geoms):
-            feature = getFionaDictPoly(poly, index)
-            outFile.write(feature)
-    else:
-        poly = modelDis[circleList]
-        feature = getFionaDictPoly(poly, '1')
-        outFile.write(feature)
-    outFile.close()
-    
-    end = time.time()
-    print('\nTime required for voronoi shapefile: %.2f seconds \n'%(end - start), flush=True)
+  Handles Polygons, MultiPolygons, GeometryCollections, and dicts of geometries.
+  """
+  start = time.time()
+  geom_data = modelDis[circleList]
+
+  # 1. Extract raw geometries into a Python list
+  geom_list = []
+  if isinstance(geom_data, dict):
+    for val in geom_data.values():
+      if isinstance(val, (list, tuple)):
+        geom_list.extend(val)
+      else:
+        geom_list.append(val)
+  elif isinstance(geom_data, (list, tuple)):
+    geom_list = list(geom_data)
+  else:
+    geom_list = [geom_data]
+
+  # 2. Build GeoDataFrame
+  gdf = gpd.GeoDataFrame(geometry=geom_list, crs=modelDis.get('crs'))
+
+  # 3. Explode MultiGeometries / GeometryCollections into individual geometries
+  gdf = gdf.explode(ignore_index=True)
+
+  # 4. Filter only Polygon geometries (discards Lines/Points resulting from GeometryCollection)
+  gdf = gdf[gdf.geometry.geom_type == 'Polygon'].copy()
+
+  # 5. Add ID column and save to Shapefile
+  if not gdf.empty:
+    gdf['id'] = gdf.index.astype(str)
+    gdf.to_file(shapePath, driver='ESRI Shapefile')
+  else:
+    print(f'[WARNING] No valid Polygon geometries found for {circleList}.')
+
+  end = time.time()
+  print(
+      f'\nTime required for polygon shapefile ({shapePath}):'
+      f' {end - start:.2f} seconds \n',
+      flush=True,
+  )
 
 def getPointsAsShp(modelDis,pointList,shapePath=''):
     schema_props = OrderedDict([("id", "str")])
@@ -307,6 +343,82 @@ def getPointsAsShp(modelDis,pointList,shapePath=''):
                 else:
                     print('Something went wrong with %s'%point)
         outFile.close()
+
+def exportMeshBuildFeaturesToShp(modelDis, out_dir="debug_point_cloud"):
+  """Exporta los puntos originales y distribuidos a archivos Shapefile."""
+  if not os.path.exists(out_dir):
+    os.makedirs(out_dir, exist_ok=True)
+
+  print(f"\n[DEBUG] Exporting all point cloud categories to: {out_dir}")
+    
+  if not os.path.exists(out_dir):
+    os.makedirs(out_dir, exist_ok=True)
+
+  # 2. Puntos Distribuidos por capa (vertexDist)
+  if "vertexDist" in modelDis and len(modelDis["vertexDist"]) > 0:
+    dist_path = os.path.join(out_dir, "p1_vertexDist.shp")
+    getPointsAsShp(modelDis, "vertexDist", dist_path)
+    print(f"  - Puntos distribuidos exportados: {dist_path}")
+
+  # 1. Puntos Originales (vertexOrg)
+  if "vertexOrg" in modelDis and len(modelDis["vertexOrg"]) > 0:
+    org_path = os.path.join(out_dir, "p2_vertexOrg.shp")
+    getPointsAsShp(modelDis, "vertexOrg", org_path)
+    print(f"  - Puntos originales exportados: {org_path}")
+
+  # 2. Buffer Points (vertexBuffer)
+  if "vertexBuffer" in modelDis and len(modelDis["vertexBuffer"]) > 0:
+    buf_pts_path = os.path.join(out_dir, "p3_vertexBuffer.shp")
+    getPointsAsShp(modelDis, "vertexBuffer", buf_pts_path)
+    print(f"  - Buffer points exported: {buf_pts_path}")
+
+  # 6. Combined Circle Buffers (circleUnion)
+  if "circleUnion" in modelDis and modelDis["circleUnion"] is not None:
+    buf_poly_path = os.path.join(out_dir, "p4_circleUnion.shp")
+    getPolyAsShp(modelDis, "circleUnion", buf_poly_path)
+    print(f"  - Circle buffer polygons exported: {buf_poly_path}")
+
+  # 6. Combined Circle Buffers (circleUnion)
+  if "circleUnionByStep" in modelDis and modelDis["circleUnionByStep"] is not None:
+    buf_poly_path = os.path.join(out_dir, "p4x_circleUnionByStep.shp")
+    getPolyAsShp(modelDis, "circleUnionByStep", buf_poly_path)
+    print(f"  - Circle buffer polygons by step exported: {buf_poly_path}")
+
+  # 6. Combined Circle Buffers (circleUnion)
+  if "bufferPerCellSize" in modelDis and modelDis["bufferPerCellSize"] is not None:
+    buf_poly_path = os.path.join(out_dir, "p4x_bufferPerCellSize.shp")
+    getPolyAsShp(modelDis, "bufferPerCellSize", buf_poly_path)
+    print(f"  - buffer polygons before unary union: {buf_poly_path}")
+
+  # 7. Circle Buffers with Interiors (circleUnionInteriors)
+  if "circleUnionInteriors" in modelDis and modelDis["circleUnionInteriors"] is not None:
+    buf_int_path = os.path.join(out_dir, "p5_circleUnionInteriors.shp")
+    getPolyAsShp(modelDis, "circleUnionInteriors", buf_int_path)
+    print(f"  - Circle buffer interior polygons exported: {buf_int_path}")
+    
+  # 3. Max Refinement Coarse Grid Points (vertexMaxRef)
+  if "vertexMaxRef" in modelDis and len(modelDis["vertexMaxRef"]) > 0:
+    max_path = os.path.join(out_dir, "p6_vertexMaxRef.shp")
+    getPointsAsShp(modelDis, "vertexMaxRef", max_path)
+    print(f"  - Max refinement points exported: {max_path}")
+
+  # 4. Min Refinement Points (vertexMinRef)
+  if "vertexMinRef" in modelDis and len(modelDis["vertexMinRef"]) > 0:
+    min_path = os.path.join(out_dir, "p7_vertexMinRef.shp")
+    getPointsAsShp(modelDis, "vertexMinRef", min_path)
+    print(f"  - Min refinement points exported: {min_path}")
+
+  # 6. Combined Circle Buffers (circleUnion)
+  if "pointsMaxRefPoly" in modelDis and modelDis["pointsMaxRefPoly"] is not None:
+    buf_poly_path = os.path.join(out_dir, "p8_pointsMaxRefPoly.shp")
+    getPolyAsShp(modelDis, "pointsMaxRefPoly", buf_poly_path)
+    print(f"  - zona donde aplica el refinamiento máximo: {buf_poly_path}")
+
+  # 1. Total Combined Points (vertexTotal)
+  if "vertexTotal" in modelDis and len(modelDis["vertexTotal"]) > 0:
+    pts_path = os.path.join(out_dir, "p9_vertexTotal.shp")
+    getPointsAsShp(modelDis, "vertexTotal", pts_path)
+    print(f"  - Total points exported: {pts_path}")
 
 #########
 # miscelaneous functions

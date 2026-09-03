@@ -4,10 +4,18 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import geopandas as gpd
 from pathlib import Path
-import os, json
+import os, json, sys
 
-with open('meshCases.json') as jsonFile:
-    meshGenerationDict = json.load(jsonFile)
+if sys.argv[1] == 'dask':
+    with open('meshCasesDask.json') as jsonFile:
+        meshGenerationDict = json.load(jsonFile)
+    useDask = False
+    nproc = 1
+else:
+    with open('meshCases.json') as jsonFile:
+        meshGenerationDict = json.load(jsonFile)
+    useDask = False
+    nproc = 1
 
 testDataFolder = "/home/hatari/projects/mf6Voronoi/tests/data"
 outputDataFolder = "/home/hatari/projects/mf6Voronoi/tests/output"
@@ -44,12 +52,11 @@ for meshName, meshDict in meshGenerationDict.items():
     #Generate the point cloud 
     vorMesh.createPointCloud()
     
-
     # Export generated voronoi mesh
     # Get today's current date Format date: %d (day), %b (short month), %y (2-digit year)
     today = datetime.now()
     todayStr = today.strftime("%d%b%y")
-    outputShape=os.path.join(outputDataFolder, caseName+todayStr, meshName, meshName+'.shp')
+    outputShape=os.path.join(outputDataFolder, caseName+'_'+todayStr, meshName, meshName+'.shp')
     os.makedirs(os.path.dirname(outputShape), exist_ok=True)
 
     #generate voronoi and export directly the shapefile

@@ -1,0 +1,17 @@
+{
+    "c8_lowerOuachitaSmackover": {
+        "maxRef": 2250,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "extent",
+            "limitShape": "extent_08040201.shp"
+        },
+        "layerLayer": [
+            [
+                "riparian",
+                "riparian_08040201.shp",
+                150
+            ]
+        ]
+    }
+}

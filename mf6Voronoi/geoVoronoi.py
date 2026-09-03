@@ -25,7 +25,8 @@ from .utils import (intersectLimitLayer,
                     printBannerHtml, 
                     printBannerText,
                     xy_in_poly, # \/ KMB additions \/
-                    processVertexFilterCloseLimitDf,
+                    processVertexWithFilterCloseLimitDf,
+                    exportMeshBuildFeaturesToShp,
                     getPolygonAndInteriors)
 
 class createVoronoi():
@@ -102,38 +103,49 @@ class createVoronoi():
             sys.exit()
         # -------------- KMB -------------- //
             
-
-    def generateOrgDistVertices(self, txtFile=''):
+    def generateOrgDistVertices(self, txtFile='', debug=False, out_dir="debug_org_dist"):
         vertexOrgPairList = []
         for layer, values in self.discLayers.items():
-            vOPL, vertexList, vertexGeomList = processVertexFilterCloseLimitDf(self.discLayers[layer]['layerRef'],
+            vertexOrgPointList, vertexDistPointList, vertexDistPointList_asGeom = processVertexWithFilterCloseLimitDf(self.discLayers[layer]['layerRef'],
                                                                               self.discLayers[layer]['layerGeoms'],
                                                                               self.modelDis,
-                                                                              use_dask=self.settings['use_dask'],nproc=self.settings['nproc'])
-            vertexOrgPairList += vOPL
-            self.modelDis['vertexDist'][layer] = vertexList
-            self.modelDis['vertexDistGeoms'][layer] = vertexGeomList
+                                                                              use_dask=self.settings['use_dask'],
+                                                                              nproc=self.settings['nproc'])
+            vertexOrgPairList += vertexOrgPointList
+            self.modelDis['vertexDist'][layer] = vertexDistPointList
+            self.modelDis['vertexDistGeoms'][layer] = vertexDistPointList_asGeom
         self.modelDis['vertexOrg'] = vertexOrgPairList
 
         if txtFile != '':
             np.savetxt(txtFile+'_org',self.modelDis['vertexOrg'])
             np.savetxt(txtFile+'_dist',self.modelDis['vertexOrg'])
 
-    def circlesAroundRefPoints(self,layer,indexRef,cellSize):
-        
+    def circlesAroundRefPoints(self,layer,last_indexBool,cellSize, debug=False):
         #first we create buffers around points and merge them
-        circleList = []
-        polyPointList = []
+        #circleList = []
+        #polyPointList = []
+        crs = self.modelDis.get('crs', None)
+        vertexDistGeoms = self.modelDis['vertexDistGeoms'][layer]
         layerSpaceList = self.discLayers[layer]['layerSpaceList']
         layerSpaceFraction = layerSpaceList.index(cellSize)/len(layerSpaceList)
         firstCellSize = layerSpaceList[0]
 
-        for geom in self.modelDis['vertexDistGeoms'][layer]:
-            #fixing for the first cell avoiding long cells
-            #circle = geom.buffer(cellSize - firstCellSize/2) #Check this
-            circle = geom.buffer(cellSize) #Check this
-            circleList.append(circle)
-        circleUnions = unary_union(circleList)
+        # Vectorización del buffer y la unión espacial
+        vertexDistGdf = gpd.GeoDataFrame(geometry=vertexDistGeoms, crs=crs)
+
+        if self.settings['use_dask']:
+            vertexDistPts = dgpd.from_geopandas(vertexDistGdf, npartitions=self.settings['nproc'])
+            vertexDistPtsBuffer = vertexDistPts.buffer(cellSize)
+            circleUnions = vertexDistPtsBuffer.union_all().compute()
+        else:
+            circleUnions = vertexDistGdf.buffer(cellSize).union_all()
+
+        # for geom in self.modelDis['vertexDistGeoms'][layer]:
+        #     #fixing for the first cell avoiding long cells
+        #     #circle = geom.buffer(cellSize - firstCellSize/2) #Check this
+        #     circle = geom.buffer(cellSize) #Check this
+        #     circleList.append(circle)
+        # circleUnions = unary_union(circleList)
 
         def getPolygonAndInteriors(polyGeom):
             exteriorInteriorPolys = [polyGeom] + [Polygon(ring) for ring in polyGeom.interiors]
@@ -151,28 +163,66 @@ class createVoronoi():
             
         
         # from the multipolygons 
-        polyPointList = []
+        # polyPointList = []
+        # for circleUnionExtInt in circleUnionExtIntList:
+        #     outerLength = circleUnionExtInt.exterior.length
+        #     #pointProg = np.arange(0,outerLength,np.sin(np.pi/2 - layerSpaceFraction*np.pi/6)*cellSize)
+        #     pointProg = np.arange(0,outerLength,(0.8 - layerSpaceFraction*0.4)*cellSize) #To review the cell size
+        #     for prog in pointProg:
+        #         pointXY = list(circleUnionExtInt.exterior.interpolate(prog).xy)
+        #         if self.overlapping:
+        #             polyPointList.append([pointXY[0][0],pointXY[1][0]])
+        #         else:
+        #             pointXYPoint = Point(pointXY[0][0],pointXY[1][0])
+        #             if pointXYPoint.within(self.modelDis['activeArea'][-1]):
+        #                 polyPointList.append([pointXY[0][0],pointXY[1][0]])
+
+        step_dist = (0.8 - layerSpaceFraction * 0.4) * cellSize
+        
+        raw_points = []
         for circleUnionExtInt in circleUnionExtIntList:
-            outerLength = circleUnionExtInt.exterior.length
-            #pointProg = np.arange(0,outerLength,np.sin(np.pi/2 - layerSpaceFraction*np.pi/6)*cellSize)
-            pointProg = np.arange(0,outerLength,(0.8 - layerSpaceFraction*0.4)*cellSize) #To review the cell size
-            for prog in pointProg:
-                pointXY = list(circleUnionExtInt.exterior.interpolate(prog).xy)
-                if self.overlapping:
-                    polyPointList.append([pointXY[0][0],pointXY[1][0]])
-                else:
-                    pointXYPoint = Point(pointXY[0][0],pointXY[1][0])
-                    if pointXYPoint.within(self.modelDis['activeArea'][-1]):
-                        polyPointList.append([pointXY[0][0],pointXY[1][0]])
+            exterior = circleUnionExtInt.exterior
+            outerLength = exterior.length
+            
+            # Recrea exactamente los mismos pasos de distancia que la versión original
+            pointProg = np.arange(0, outerLength, step_dist)
+            
+            # Interpolación vectorial (mucho más rápida que llamar .interpolate() uno por uno)
+            pts = exterior.interpolate(pointProg)
+            raw_points.extend(pts)
+
+        # Convertimos los puntos a GeoDataFrame vectorizado
+        sampled_pts_gdf = gpd.GeoDataFrame(geometry=raw_points, crs=crs)
+        
+        # Extraemos coordenadas como arreglo [[x1, y1], [x2, y2], ...]
+        coords_array = np.column_stack([sampled_pts_gdf.geometry.x, sampled_pts_gdf.geometry.y])
+
+        # Filtrado espacial vectorizado (idéntico al original)
+        if self.overlapping:
+            polyPointList = coords_array.tolist()
+        else:
+            active_area_geom = self.modelDis['activeArea'][-1]
+            if self.settings['use_dask']:
+                d_sampled = dgpd.from_geopandas(sampled_pts_gdf, npartitions=self.settings['nproc'])
+                inside_mask = d_sampled.within(active_area_geom).compute().values
+            else:
+                inside_mask = sampled_pts_gdf.within(active_area_geom).values
+            
+            polyPointList = coords_array[inside_mask].tolist()
                 
         circleUnionExtIntMpoly = MultiPolygon(circleUnionExtIntList)
         circleUnionExtWithIntMpoly = MultiPolygon(circleUnionExtWithIntList)
         
         return circleUnionExtWithIntMpoly, circleUnionExtIntMpoly, polyPointList
 
-    def generateAllCircles(self, verbose=True):
+
+    def generateAllCircles(self, debug=False, verbose=True):
         partialCircleUnionList = []
-        partialCircleUnionInteriorList = []    
+        partialCircleUnionInteriorList = []
+        if debug:
+            self.modelDis['circleUnionByStep'] = {}
+            self.modelDis['bufferPerCellSize'] = {}
+            
 
 		#insert banner
         if isRunningInJupyter():
@@ -203,8 +253,15 @@ class createVoronoi():
             for index, cellSize in enumerate(cellSizeList):
                 # KMB - only run circleUnionInterios and circleUnion calculations for last index
                 last_index_bool = cellSize == np.array(cellSizeList).max()
-                circleUnionInteriors, circleUnion, polyPointList = self.circlesAroundRefPoints(layer,last_index_bool,cellSize)
+                circleUnionInteriors, circleUnion, polyPointList = self.circlesAroundRefPoints(layer,last_index_bool,cellSize, debug)
                 self.modelDis['vertexBuffer'] += polyPointList
+
+                if debug:
+                    # Store the circleUnion for the current step size
+                    if cellSize not in self.modelDis['circleUnionByStep']:
+                        self.modelDis['circleUnionByStep'][cellSize] = []
+                    self.modelDis['circleUnionByStep'][cellSize].append(circleUnion)
+
                 #for the last discretization
                 if last_index_bool: # KMB
                     #self.modelDis['circleUnion'] = circleUnion
@@ -331,10 +388,10 @@ class createVoronoi():
     # -------------- KMB --------------//    
  
     
-    def createPointCloud(self, verbose=True): 
+    def createPointCloud(self, verbose=True, debug=False, out_dir="debug_point_cloud"): 
         start = time.time()
         #Generate all circles and points on circle paths
-        self.generateAllCircles()
+        self.generateAllCircles(debug)
         #Distribute points over the max and min refinement areas
         self.getPointsMinMaxRef()
         #Compile all points
@@ -369,6 +426,14 @@ class createVoronoi():
             print('/--------------------------------------------/')
             end = time.time()
             print('\nTime required for point generation: %.2f seconds \n'%(end - start), flush=True)
+
+        # --- EXPORTAR A SHAPEFILES SI DEBUG=TRUE ---
+            if debug:
+                print(
+                    f"\n[DEBUG] Exportando todos los sets del point cloud:"
+                    f" {out_dir}"
+                )
+                exportMeshBuildFeaturesToShp(self.modelDis, out_dir=out_dir)
 
 
     def generateVoronoi(self, shapePath=None):
