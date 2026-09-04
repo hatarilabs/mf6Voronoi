@@ -28,6 +28,7 @@ from .utils import (intersectLimitLayer,
                     processVertexWithFilterCloseLimitDf,
                     exportMeshBuildFeaturesToShp,
                     getPolygonAndInteriors)
+from mf6Voronoi.utils import getVoronoiAsShp
 
 class createVoronoi():
     def __init__(self, meshName, maxRef, multiplier, overlapping=True, use_dask=False, nproc=1):
@@ -121,15 +122,11 @@ class createVoronoi():
             np.savetxt(txtFile+'_dist',self.modelDis['vertexOrg'])
 
     def circlesAroundRefPoints(self,layer,last_indexBool,cellSize, debug=False):
-        #first we create buffers around points and merge them
-        #circleList = []
-        #polyPointList = []
         crs = self.modelDis.get('crs', None)
         vertexDistGeoms = self.modelDis['vertexDistGeoms'][layer]
         layerSpaceList = self.discLayers[layer]['layerSpaceList']
         layerSpaceFraction = layerSpaceList.index(cellSize)/len(layerSpaceList)
-        firstCellSize = layerSpaceList[0]
-
+        
         # Vectorización del buffer y la unión espacial
         vertexDistGdf = gpd.GeoDataFrame(geometry=vertexDistGeoms, crs=crs)
 
@@ -139,13 +136,6 @@ class createVoronoi():
             circleUnions = vertexDistPtsBuffer.union_all().compute()
         else:
             circleUnions = vertexDistGdf.buffer(cellSize).union_all()
-
-        # for geom in self.modelDis['vertexDistGeoms'][layer]:
-        #     #fixing for the first cell avoiding long cells
-        #     #circle = geom.buffer(cellSize - firstCellSize/2) #Check this
-        #     circle = geom.buffer(cellSize) #Check this
-        #     circleList.append(circle)
-        # circleUnions = unary_union(circleList)
 
         def getPolygonAndInteriors(polyGeom):
             exteriorInteriorPolys = [polyGeom] + [Polygon(ring) for ring in polyGeom.interiors]
@@ -160,22 +150,6 @@ class createVoronoi():
         elif circleUnions.geom_type == 'Polygon':
             circleUnionExtIntList += getPolygonAndInteriors(circleUnions)
             circleUnionExtWithIntList.append(circleUnions)
-            
-        
-        # from the multipolygons 
-        # polyPointList = []
-        # for circleUnionExtInt in circleUnionExtIntList:
-        #     outerLength = circleUnionExtInt.exterior.length
-        #     #pointProg = np.arange(0,outerLength,np.sin(np.pi/2 - layerSpaceFraction*np.pi/6)*cellSize)
-        #     pointProg = np.arange(0,outerLength,(0.8 - layerSpaceFraction*0.4)*cellSize) #To review the cell size
-        #     for prog in pointProg:
-        #         pointXY = list(circleUnionExtInt.exterior.interpolate(prog).xy)
-        #         if self.overlapping:
-        #             polyPointList.append([pointXY[0][0],pointXY[1][0]])
-        #         else:
-        #             pointXYPoint = Point(pointXY[0][0],pointXY[1][0])
-        #             if pointXYPoint.within(self.modelDis['activeArea'][-1]):
-        #                 polyPointList.append([pointXY[0][0],pointXY[1][0]])
 
         step_dist = (0.8 - layerSpaceFraction * 0.4) * cellSize
         
@@ -193,6 +167,15 @@ class createVoronoi():
 
         # Convertimos los puntos a GeoDataFrame vectorizado
         sampled_pts_gdf = gpd.GeoDataFrame(geometry=raw_points, crs=crs)
+
+        # ==================== NEW: OUTSIDE FILTER ====================
+        # Combine layer source geometries
+        orig_layer_union = unary_union(self.discLayers[layer]['layerGeoms'])
+        
+        # Filter out points touching or inside the original polygon
+        outside_mask = ~sampled_pts_gdf.intersects(orig_layer_union)
+        sampled_pts_gdf = sampled_pts_gdf[outside_mask].reset_index(drop=True)
+        # =============================================================
         
         # Extraemos coordenadas como arreglo [[x1, y1], [x2, y2], ...]
         coords_array = np.column_stack([sampled_pts_gdf.geometry.x, sampled_pts_gdf.geometry.y])
@@ -278,7 +261,7 @@ class createVoronoi():
         self.modelDis['circleUnion'] = totalCircleUnion
         self.modelDis['circleUnionInteriors'] = totalCircleUnionInteriors
 
-    def getPointsMinMaxRef(self, verbose=True): # KMB, could also set verbose   at Class level and add to self.settings
+    def getPointsMinMaxRef(self, verbose=False): # KMB, could also set verbose   at Class level and add to self.settings
         #define refs
         maxRef = self.modelDis['maxRef']
 
@@ -449,12 +432,15 @@ class createVoronoi():
         
         # Update geometries intersecting limit polygon
         if self.settings['use_dask']:
-            intersecting_bool = dgpd.from_geopandas(layer_df,self.settings['nproc']).intersects(self.modelDis['limitGeometry'].exterior).compute()
-            layer_df.loc[intersecting_bool,'geometry'] = dgpd.from_geopandas(layer_df.loc[intersecting_bool],self.settings['nproc']).intersection(self.modelDis['limitGeometry']).compute()
+            #intersecting_bool = dgpd.from_geopandas(layer_df,self.settings['nproc']).intersects(self.modelDis['limitGeometry'].exterior).compute()
+            #layer_df.loc[intersecting_bool,'geometry'] = dgpd.from_geopandas(layer_df.loc[intersecting_bool],self.settings['nproc']).intersection(self.modelDis['limitGeometry']).compute()
+            # Partition data spatially into R-Trees before intersecting
+            # 1. Partition spatially
+            d_layer = dgpd.from_geopandas(layer_df, npartitions=self.settings['nproc'])
+            layer_df['geometry'] = d_layer.intersection(self.modelDis['limitGeometry']).compute()
         else:
-            intersecting_bool = layer_df.intersects(self.modelDis['limitGeometry'].exterior)
-            layer_df.loc[intersecting_bool,'geometry'] = layer_df.loc[intersecting_bool].intersection(self.modelDis['limitGeometry'])
-
+            layer_df['geometry'] = layer_df.intersection(self.modelDis['limitGeometry'])
+            
         #clippedRegions = layer_df.explode(index_parts=False).geometry.values.tolist()
         # --- FIX: Explode GeoSeries directly and filter empty geometries ---
         exploded_geoms = layer_df.geometry.explode(ignore_index=True)

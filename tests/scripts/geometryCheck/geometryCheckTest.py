@@ -6,92 +6,111 @@ import geopandas as gpd
 from pathlib import Path
 import os, json, sys
 
-if sys.argv[1] == 'dask':
-    with open('meshCasesDask.json') as jsonFile:
-        meshGenerationDict = json.load(jsonFile)
-    useDask = True
-    nproc = 4
-    print('Working with Dask')
-else:
-    with open('meshCases.json') as jsonFile:
-        meshGenerationDict = json.load(jsonFile)
+# --------------------------
+# Processing CLI arguments
+# --------------------------
+#processing argument
+if len(sys.argv) < 4:
+    sys.exit(
+        "Usage: python script.py <caseName> <runType: normalRun|parallelRun> <caseType: casesDask|casesNormal> <fromCase: 0>"
+    )
+
+caseName = sys.argv[1]
+
+if sys.argv[2] == 'normalRun':
     useDask = False
     nproc = 1
+    print('Computing with normal CPU')
+elif sys.argv[2] == 'parallelRun':
+    useDask = True
+    nproc = 4      
+    print('Computing with parallelized computing')
+else:
+    sys.exit(
+        f"Invalid execution mode: '{sys.argv[2]}'. Expected 'normalRun' or 'parallelRun'."
+    )
 
+# Case file setup
+if sys.argv[3] == "casesDask":
+    json_path = "meshCasesDask.json"
+    print("Working with Dask cases")
+elif sys.argv[3] == "casesNormal":
+    json_path = "meshCasesNormal.json"
+    print("Working with normal cases")
+else:
+    sys.exit("The given mesh case is wrong capullo!")
+
+with open(json_path) as jsonFile:
+    meshGenerationDict = json.load(jsonFile)
+
+# Processing fromCase 
+try :
+    fromCase = int(sys.argv[4])
+except IndexError:
+    fromCase = 0
+
+# --------------------------
+# Defining folders
+# --------------------------
 testDataFolder = "/home/hatari/projects/mf6Voronoi/tests/data"
 outputDataFolder = "/home/hatari/projects/mf6Voronoi/tests/output"
 
-#/------------------ for case name
-caseName = ""
-while not caseName:
-    caseName = input("Enter the case name: ").strip()
-print(f"Processing case: '{caseName}'")
-#---------------------/
-
 # Get today's current date Format date: %d (day), %b (short month), %y (2-digit year)
-today = datetime.now()
-todayStr = today.strftime("%d%b%y")
+todayStr = datetime.now().strftime("%d%b%y")
 
-for meshName, meshDict in meshGenerationDict.items():
+# Process mesh cases
+for meshName, meshDict in list(meshGenerationDict.items())[fromCase:]:
+    datasetPath = os.path.join(testDataFolder, meshName, "shp")
+    verifDir = os.path.join(outputDataFolder, f"{caseName}_{todayStr}", sys.argv[2], meshName, )
+    outputShape = os.path.join(verifDir, f"{meshName}.shp")
 
-    #Create mesh object specifying the coarse mesh and the multiplier
-    vorMesh = createVoronoi(meshName=meshName,maxRef = meshDict["maxRef"], 
-                            multiplier=meshDict["multiplier"],
-                            use_dask=useDask, nproc=nproc)
-
-    datasetPath = os.path.join(testDataFolder,meshName,'shp')
-
-    #Open limit layers and refinement definition layers
-    vorMesh.addLimit(meshDict["limitLayer"]["limitName"], os.path.join(datasetPath,meshDict["limitLayer"]["limitShape"]))
-
-    for layerList in  meshDict["layerLayer"]:
-        vorMesh.addLayer(layerList[0],os.path.join(datasetPath,layerList[1]),layerList[2])
-
-    # Export generated voronoi mesh
-    outputShape=os.path.join(outputDataFolder, caseName+'_'+todayStr, meshName, meshName+'.shp')
     os.makedirs(os.path.dirname(outputShape), exist_ok=True)
 
-    #Generate point pair array
-    verifDir = os.path.join(outputDataFolder, caseName+'_'+todayStr, meshName)
-    vorMesh.generateOrgDistVertices(debug=True, out_dir=verifDir)
+    if useDask:
 
-    #Generate the point cloud 
-    vorMesh.createPointCloud(debug=True, out_dir=verifDir)
+        #Create mesh object specifying the coarse mesh and the multiplier
+        vorMesh = createVoronoi(meshName=meshName,
+                                maxRef = meshDict["maxRef"], 
+                                multiplier=meshDict["multiplier"],
+                                use_dask=useDask, 
+                                nproc=nproc)
+
+        #Open limit layers and refinement definition layers
+        vorMesh.addLimit(meshDict["limitLayer"]["limitName"],
+                         os.path.join(datasetPath, meshDict["limitLayer"]["limitShape"]))
+
+        for layerList in  meshDict["layerLayer"]:
+            vorMesh.addLayer(layerList[0],
+                             os.path.join(datasetPath,layerList[1]),
+                             layerList[2])
+
+        vorMesh.generateOrgDistVertices(debug=True, out_dir=verifDir)
+        vorMesh.createPointCloud(debug=True, out_dir=verifDir)
+        vorMesh.generateVoronoi(shapePath=outputShape)
+
+    else:
+        #Create mesh object specifying the coarse mesh and the multiplier
+        vorMesh = createVoronoi(meshName=meshName,
+                                maxRef = meshDict["maxRef"], 
+                                multiplier=meshDict["multiplier"])
+
+        #Open limit layers and refinement definition layers
+        vorMesh.addLimit(meshDict["limitLayer"]["limitName"], 
+                         os.path.join(datasetPath,meshDict["limitLayer"]["limitShape"]))
+
+        for layerList in  meshDict["layerLayer"]:
+            vorMesh.addLayer(layerList[0],
+                             os.path.join(datasetPath,layerList[1]),
+                             layerList[2])
+
+        #Generate point pair array
+        vorMesh.generateOrgDistVertices()
+
+        #Generate the point cloud 
+        vorMesh.createPointCloud()
+
+        #generate voronoi and export directly the shapefile
+        vorMesh.generateVoronoi()
+
+        getVoronoiAsShp(vorMesh.modelDis, shapePath=outputShape)
     
-
-
-    #generate voronoi and export directly the shapefile
-    vorMesh.generateVoronoi(shapePath=outputShape)
-
-    # #check mesh generation
-    # from mf6Voronoi.meshProperties import meshShape
-    # import os
-
-    # # open the mesh file
-    # mesh=meshShape(shapePath)
-
-    # # get the list of vertices and cell2d data
-    # gridprops=mesh.get_gridprops_disv()
-
-    # cell2d = gridprops['cell2d']           #cellid, cell centroid xy, vertex number and vertex id list
-    # vertices = gridprops['vertices']       #vertex id and xy coordinates
-    # ncpl = gridprops['ncpl']               #number of cells per layer
-    # nvert = gridprops['nvert']             #number of verts
-    # centroids=gridprops['centroids']
-        
-    # mesh.save_properties(os.path.join('../checkFiles/meshGeneration/json','%s_disvDict.json'%meshName))
-
-    # # Load the shapefile (replace 'your_shapefile.shp' with the path to your file)
-    # gdf = gpd.read_file(shapePath)
-
-    # # Create a plot
-    # fig, ax = plt.subplots(figsize=(10, 10))
-    # gdf.plot(figsize=(35,25), fc='crimson', alpha=0.3, ec='teal', ax=ax)
-
-    # # Remove axis for cleaner image (optional)
-    # ax.set_axis_off()
-
-    # # Save the figure as a PNG
-    # plt.savefig("../checkFiles/meshGeneration/png/%s.png"%meshName, bbox_inches="tight", dpi=300)
-
-    # plt.close()

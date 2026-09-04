@@ -88,15 +88,24 @@ def processVertexWithFilterCloseLimitDf(layerRef,layerGeoms,modelDis,use_dask=Fa
     for geom in layerGeoms:
         if geom.geom_type in ['Polygon', 'MultiPolygon']:
             # Use boundary/exterior length for polygons
-            boundaries = geom.boundary.geoms if geom.geom_type == 'MultiPolygon' else [geom.exterior]
-            for boundary in boundaries:
-                prog = np.arange(0, boundary.length, layerRef)
-                dist_raw_points.extend(boundary.interpolate(prog))
+            polys = geom.geoms if geom.geom_type == 'MultiPolygon' else [geom]
+            for poly in polys:
+                # Collect exterior ring AND all interior hole rings
+                rings = [poly.exterior] + list(poly.interiors)
+                for ring in rings:
+                    prog = np.arange(0, ring.length, layerRef)
+                    dist_raw_points.extend(ring.interpolate(prog))
+
         elif geom.geom_type in ['LineString', 'MultiLineString']:
             lines = geom.geoms if geom.geom_type == 'MultiLineString' else [geom]
             for line in lines:
                 prog = np.arange(0, line.length, layerRef)
                 dist_raw_points.extend(line.interpolate(prog))
+
+        elif geom.geom_type in ['Point', 'MultiPoint']:
+            pts = geom.geoms if geom.geom_type == 'MultiPoint' else [geom]
+            dist_raw_points.extend(pts)
+
     distLayerPtsDf = gpd.GeoDataFrame(geometry=dist_raw_points, crs=modelDis.get('crs'))
 
     # First collect all geometries within limitGeometry

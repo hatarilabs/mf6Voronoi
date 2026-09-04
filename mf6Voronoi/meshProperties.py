@@ -39,7 +39,10 @@ class meshShape:
 
 		uniqueVerticesArray,uind,uinv = unique_rows(allVerticesList,return_inverse=True)
 		uniqueVerticesList = uniqueVerticesArray.tolist()
-		centroids = self.mesh_df.geometry.centroid.apply(lambda c: c.coords[0]).tolist() # (x,y) coordinates of mesh centroids
+		#centroids = self.mesh_df.geometry.centroid.apply(lambda c: c.coords[0]).tolist() # (x,y) coordinates of mesh centroids
+		# Fully vectorized Shapely/GeoPandas extraction (No Python loop)
+		centroids_series = self.mesh_df.geometry.centroid
+		centroids = np.column_stack([centroids_series.x.to_numpy(), centroids_series.y.to_numpy()]).tolist()
 		
 		cell2dArrays = [[ind,*c,nvert,*(uinv[poly_inds].ravel()).tolist()] for ind,(c,nvert,poly_inds) in enumerate(zip(centroids,polyLenVerticies,polyAllIndicies))] # index,centroid,len(vertex_indexes), vertex_indexes
 		
