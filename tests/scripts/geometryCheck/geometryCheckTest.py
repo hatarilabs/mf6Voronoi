@@ -12,7 +12,14 @@ import os, json, sys
 #processing argument
 if len(sys.argv) < 4:
     sys.exit(
-        "Usage: python script.py <caseName> <runType: normalRun|parallelRun> <caseType: casesDask|casesNormal> <fromCase: 0>"
+        "Usage: python script.py <caseName> <runType> <caseType> [<fromCase>] [<fileType>]\n\n"
+        "Arguments:\n"
+        "  caseName   : Name of the test case\n"
+        "  runType    : normalRun | parallelRun\n"
+        "  caseType   : casesDask | casesNormal\n"
+        "  fromCase   : Optional start index (default: 0)\n"
+        "  fileType   : shp | geojson (default: Shapefile)" \
+        "  debug      : True | False (default: False)"
     )
 
 caseName = sys.argv[1]
@@ -32,10 +39,10 @@ else:
 
 # Case file setup
 if sys.argv[3] == "casesDask":
-    json_path = "meshCasesDask.json"
+    json_path = "../../json/meshCasesDask.json"
     print("Working with Dask cases")
 elif sys.argv[3] == "casesNormal":
-    json_path = "meshCasesNormal.json"
+    json_path = "../../json/meshCasesNormal.json"
     print("Working with normal cases")
 else:
     sys.exit("The given mesh case is wrong capullo!")
@@ -49,6 +56,22 @@ try :
 except IndexError:
     fromCase = 0
 
+# Processing fileType 
+try :
+    fileType = sys.argv[5]
+except IndexError:
+    fileType = 'shp'
+
+# Processing debugModel 
+try :
+    debugMode = sys.argv[6]
+    if debugMode == 'True':
+        debug = True
+    else:
+        debug = False
+except IndexError:
+    debug = False
+
 # --------------------------
 # Defining folders
 # --------------------------
@@ -60,11 +83,22 @@ todayStr = datetime.now().strftime("%d%b%y")
 
 # Process mesh cases
 for meshName, meshDict in list(meshGenerationDict.items())[fromCase:]:
-    datasetPath = os.path.join(testDataFolder, meshName, "shp")
-    verifDir = os.path.join(outputDataFolder, f"{caseName}_{todayStr}", sys.argv[2], meshName, )
-    outputShape = os.path.join(verifDir, f"{meshName}.shp")
+    if fileType == 'shp':
+        datasetPath = os.path.join(testDataFolder, meshName, "shp")
+    elif fileType == 'geojson':
+        datasetPath = os.path.join(testDataFolder, meshName, "geojson")
+    else:
+        print('El tipo de archivo espacial no existe capullo')
+    verifDir = os.path.join(outputDataFolder, f"{caseName}_{todayStr}", sys.argv[2], meshName,'shp')
 
+    outputShape = os.path.join(verifDir, f"{meshName}.shp")
     os.makedirs(os.path.dirname(outputShape), exist_ok=True)
+
+    if 'overlapping' in meshDict.keys():
+        overlapping = meshDict['overlapping']
+    else:
+        overlapping = True
+
 
     if useDask:
 
@@ -73,44 +107,44 @@ for meshName, meshDict in list(meshGenerationDict.items())[fromCase:]:
                                 maxRef = meshDict["maxRef"], 
                                 multiplier=meshDict["multiplier"],
                                 use_dask=useDask, 
-                                nproc=nproc)
+                                nproc=nproc,
+                                overlapping=overlapping)
 
         #Open limit layers and refinement definition layers
         vorMesh.addLimit(meshDict["limitLayer"]["limitName"],
-                         os.path.join(datasetPath, meshDict["limitLayer"]["limitShape"]))
+                         os.path.join(datasetPath, meshDict["limitLayer"]["limitShape"]+'.'+fileType))
 
         for layerList in  meshDict["layerLayer"]:
             vorMesh.addLayer(layerList[0],
-                             os.path.join(datasetPath,layerList[1]),
+                             os.path.join(datasetPath,layerList[1]+'.'+fileType),
                              layerList[2])
 
-        vorMesh.generateOrgDistVertices(debug=True, out_dir=verifDir)
-        vorMesh.createPointCloud(debug=True, out_dir=verifDir)
+        vorMesh.generateOrgDistVertices(debug=debug, out_dir=verifDir)
+        vorMesh.createPointCloud(debug=debug, out_dir=verifDir)
         vorMesh.generateVoronoi(shapePath=outputShape)
 
     else:
         #Create mesh object specifying the coarse mesh and the multiplier
         vorMesh = createVoronoi(meshName=meshName,
                                 maxRef = meshDict["maxRef"], 
-                                multiplier=meshDict["multiplier"])
+                                multiplier=meshDict["multiplier"],
+                                overlapping=overlapping)
 
         #Open limit layers and refinement definition layers
         vorMesh.addLimit(meshDict["limitLayer"]["limitName"], 
-                         os.path.join(datasetPath,meshDict["limitLayer"]["limitShape"]))
+                         os.path.join(datasetPath,meshDict["limitLayer"]["limitShape"]+'.'+fileType))
 
         for layerList in  meshDict["layerLayer"]:
             vorMesh.addLayer(layerList[0],
-                             os.path.join(datasetPath,layerList[1]),
+                             os.path.join(datasetPath,layerList[1]+'.'+fileType),
                              layerList[2])
-
-        #Generate point pair array
-        vorMesh.generateOrgDistVertices()
-
-        #Generate the point cloud 
-        vorMesh.createPointCloud()
-
-        #generate voronoi and export directly the shapefile
-        vorMesh.generateVoronoi()
-
-        getVoronoiAsShp(vorMesh.modelDis, shapePath=outputShape)
+        if debug:
+            vorMesh.generateOrgDistVertices(debug=True, out_dir=verifDir)
+            vorMesh.createPointCloud(debug=True, out_dir=verifDir)
+            vorMesh.generateVoronoi(shapePath=outputShape)
+        else:
+            vorMesh.generateOrgDistVertices()
+            vorMesh.createPointCloud()
+            vorMesh.generateVoronoi()
+            getVoronoiAsShp(vorMesh.modelDis, shapePath=outputShape)
     

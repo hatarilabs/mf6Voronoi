@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "wells",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32718" } },
+"features": [
+{ "type": "Feature", "properties": { "FID": 0 }, "geometry": { "type": "Point", "coordinates": [ 276083.064617403899319, 8684958.732349881902337 ] } },
+{ "type": "Feature", "properties": { "FID": 1 }, "geometry": { "type": "Point", "coordinates": [ 276342.651091952808201, 8685045.077110316604376 ] } },
+{ "type": "Feature", "properties": { "FID": 2 }, "geometry": { "type": "Point", "coordinates": [ 276150.527172372792847, 8684812.804518040269613 ] } }
+]
+}

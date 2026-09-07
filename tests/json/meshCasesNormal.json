@@ -1,0 +1,290 @@
+{
+    "c1_regionalAngascancha": {
+        "maxRef": 200,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "catchment"
+        },
+        "layerLayer": [
+            [
+                "river",
+                "river_basin",
+                50
+            ]
+        ]
+    },
+    "c2_riverAquifer": {
+        "maxRef": 100,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "ModelLimit1"
+        },
+        "layerLayer": [
+            [
+                "ghb",
+                "ModelGHB1",
+                20
+            ],
+            [
+                "riv",
+                "ModelRiver2",
+                10
+            ],
+            [
+                "wel",
+                "ModelWell2",
+                2
+            ]
+        ]
+    },
+    "c3_openPitInflows": {
+        "maxRef": 250,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "catchment"
+        },
+        "layerLayer": [
+            [
+                "river",
+                "river_basin",
+                50
+            ],
+            [
+                "pit",
+                "minePlan/pitShell",
+                50
+            ]
+        ]
+    },
+    "c4_hillslopeModel": {
+        "maxRef": 250,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "modelExtension/modelExtension"
+        },
+        "layerLayer": [
+            [
+                "river",
+                "boundaryConditions/Streams_Aoi_Drn_v1a",
+                50
+            ],
+            [
+                "refinement",
+                "modelExtension/modelAoiClip",
+                50
+            ]
+        ]
+    },  
+    "c5_siteDewatering": {
+        "maxRef": 10,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "modelAoi2"
+        },
+        "layerLayer": [
+            [
+                "ghb",
+                "modelGhb",
+                2
+            ],
+            [
+                "drn",
+                "drains",
+                1
+            ],
+            [
+                "wel",
+                "pointWell",
+                1
+            ]
+        ]
+    },
+    "c6_stibniteMine": {
+        "maxRef": 500,
+        "multiplier": 2.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "catchment_11N"
+        },
+        "layerLayer": [
+            [
+                "water",
+                "river_basin_11N",
+                20
+            ],
+            [
+                "pit",
+                "minePits_11N",
+                50
+            ],
+            [
+                "dump",
+                "mineDumps_11N",
+                50
+            ],
+            [
+                "faults",
+                "faults",
+                5
+            ]
+        ]
+    },
+    "c7_trenchExcavation": {
+        "maxRef": 50,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "modelAoi"
+        },
+        "layerLayer": [
+            [
+                "ghb",
+                "compoundGhb",
+                20
+            ],
+            [
+                "wel",
+                "pumpingWells",
+                5
+            ],
+            [
+                "drn",
+                "trenchExcavationDissolved",
+                2
+            ]
+        ]
+    },
+    "c14_infiltrationUnsaturated": {
+        "maxRef": 10,
+        "multiplier": 1.2,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "modelLimit"
+        },
+        "layerLayer": [
+            [
+                "pond",
+                "infiltrationPond",
+                1
+            ],
+            [
+                "regionalFlow",
+                "regionalFlow",
+                5
+            ],
+            [
+                "river",
+                "river",
+                4
+            ],
+            [
+                "wells",
+                "wells",
+                1
+            ]
+        ]
+    },
+    "c15_regionalModelWaterReservoir": {
+        "maxRef": 800,
+        "multiplier": 1.5,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "catchment"
+        },
+        "layerLayer": [
+            [
+                "river",
+                "river_basin",
+                80
+            ]        
+        ]
+    },
+    "c16_waterReservoirSeepage": {
+        "maxRef": 250,
+        "multiplier": 1,
+        "overlapping": false,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "reservoirModelLimit"
+        },
+        "layerLayer": [
+            [
+                "dam",
+                "damEnvelopeDownstream",
+                20
+            ],
+            [
+                "reservoir",
+                "reservoirEnvelope",
+                80
+            ],
+            [
+                "river",
+                "river_basin",
+                80
+            ]       
+        ]
+    },
+    "c17_regionalModelMineProject": {
+        "maxRef": 800,
+        "multiplier": 1,
+        "overlapping": false,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "hatariUtils/catchment"
+        },
+        "layerLayer": [
+            [
+                "tailing",
+                "tailingsEnvelope",
+                100
+            ],
+            [
+                "pit",
+                "pitShell",
+                100
+            ],
+            [
+                "dump",
+                "wasteDump",
+                100
+            ],
+            [
+                "river",
+                "hatariUtils/river_basin",
+                150
+            ],
+            [
+                "buffer",
+                "hatariUtils/catchmentMinus500m",
+                450
+            ]       
+        ]
+    },
+    "c18_tunnelMineInflow": {
+        "maxRef": 150,
+        "multiplier": 1.5,
+        "overlapping": false,
+        "limitLayer": {
+            "limitName": "active",
+            "limitShape": "activeAreas"
+        },
+        "layerLayer": [
+            [
+                "river",
+                "Rivers",
+                40
+            ],
+            [
+                "labours",
+                "ugLaboursArea",
+                20
+            ]       
+        ]
+    }      
+}

@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "ugLaboursArea",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32718" } },
+"features": [
+{ "type": "Feature", "properties": { "FID": 0 }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 624200.0, 8357160.0 ], [ 625470.0, 8357160.0 ], [ 625470.0, 8356780.0 ], [ 624200.0, 8356780.0 ], [ 624200.0, 8357160.0 ] ] ] ] } }
+]
+}

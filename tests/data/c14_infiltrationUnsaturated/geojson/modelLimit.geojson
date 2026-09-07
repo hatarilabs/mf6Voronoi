@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "modelLimit",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32718" } },
+"features": [
+{ "type": "Feature", "properties": { "FID": 0 }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 276000.0, 8685100.0 ], [ 276500.0, 8685100.0 ], [ 276500.0, 8684750.0 ], [ 276000.0, 8684750.0 ], [ 276000.0, 8685100.0 ] ] ] ] } }
+]
+}

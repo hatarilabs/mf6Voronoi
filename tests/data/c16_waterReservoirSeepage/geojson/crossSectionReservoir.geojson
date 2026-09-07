@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "crossSectionReservoir",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32612" } },
+"features": [
+{ "type": "Feature", "properties": { "FID": 0 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 567163.15389589429833, 3627451.539106249343604 ], [ 571590.708541392465122, 3625003.361831679474562 ], [ 572345.997275036294013, 3621982.206897104624659 ], [ 574273.285767782479525, 3620237.229477996472269 ], [ 575653.64103961433284, 3616851.452396144624799 ] ] ] } }
+]
+}

@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "damAlignment",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32612" } },
+"features": [
+{ "type": "Feature", "properties": { "FID": 0 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 568138.447880096500739, 3624953.296527987346053 ], [ 570192.073026578407735, 3627857.469419061206281 ] ] ] } }
+]
+}

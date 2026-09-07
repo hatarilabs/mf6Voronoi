@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "crossSectionTotal",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32718" } },
+"features": [
+{ "type": "Feature", "properties": { "FID": 0 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 275989.995655505685136, 8684931.66076473146677 ], [ 276527.683580542681739, 8684934.314473761245608 ] ] ] } }
+]
+}
