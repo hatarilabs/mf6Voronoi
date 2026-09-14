@@ -1,9 +1,7 @@
-import os, re, time
+#import os, re, time
 import flopy
-import sys
+#import sys
 import numpy as np
-import pandas as pd
-import pyvista as pv
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
@@ -14,10 +12,11 @@ from rasterio.transform import from_origin
 from rasterio.mask import mask
 import geopandas as gpd
 from skimage import measure
-from shapely.geometry import box, Point, Polygon, LineString
+from shapely.geometry import Point, LineString
+from flopy.plot import PlotCrossSection
 
 from scipy.interpolate import griddata
-from mf6Voronoi.utils import isRunningInJupyter, printBannerHtml, printBannerText
+#from mf6Voronoi.utils import isRunningInJupyter, printBannerHtml, printBannerText
 
 def FlowVectorGenerator(gwf, backgroundImageDict=None, 
                         kstpkper=(0,0),
@@ -138,6 +137,100 @@ def FlowVectorGenerator(gwf, backgroundImageDict=None,
         print("DISU: This dicretization type is not supported")
     else:
         print("No Dis file was found")
+
+def crossSectionFlowVectorGenerator(model, cbc_file, head_file, line, ax=None, kstpkper=(0, 0), 
+                             istep=1, jstep=1, normalize=False, scale=None, 
+                             pivot='middle', color='black', alpha=0.8, **kwargs):
+    """
+    Plot projected groundwater flow vectors in a 2D cross-section (PlotCrossSection).
+
+    Parameters
+    ----------
+    model : flopy.mf6.MFModel
+        MODFLOW 6 model instance.
+    cbc_file : str or flopy.utils.CellBudgetFile
+        Cell Budget File path or object.
+    head_file : str or flopy.utils.HeadFile
+        Head File path or object.
+    line : dict, list, or LineString
+        Cross-section line definition for PlotCrossSection.
+    ax : matplotlib.axes.Axes, optional
+        Target Matplotlib axis. If None, uses current axis (plt.gca()).
+    kstpkper : tuple of int, optional
+        Time step and stress period tuple (kstp, kper). Default is (0, 0).
+    istep : int, optional
+        Vertical sampling frequency (layer step). Default is 1.
+    jstep : int, optional
+        Horizontal sampling frequency along the profile. Default is 1.
+    normalize : bool, optional
+        If True, normalizes vector magnitudes to 1. Default is False.
+    scale : float, optional
+        Scaling factor for ax.quiver.
+    pivot : str, optional
+        Arrow pivot point ('tail', 'middle', 'tip'). Default is 'middle'.
+    color : str, optional
+        Vector arrow color. Default is 'black'.
+    alpha : float, optional
+        Transparency level (0 to 1). Default is 0.8.
+    **kwargs : dict
+        Additional arguments passed to PlotCrossSection.plot_discharge.
+
+    Returns
+    -------
+    quiver : matplotlib.quiver.Quiver
+        Generated Matplotlib quiver object.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    # Load budget and head files if file paths were passed as strings
+    cbc = flopy.utils.CellBudgetFile(cbc_file) if isinstance(cbc_file, str) else cbc_file
+    hds = flopy.utils.HeadFile(head_file) if isinstance(head_file, str) else head_file
+
+    # Initialize FloPy's PlotCrossSection object
+    xc = PlotCrossSection(model=model, ax=ax, line=line)
+
+    # Extract flow vectors / specific discharge
+    try:
+        spdis = flopy.utils.postprocessing.get_specific_discharge(
+            cbc, model, kstpkper=kstpkper
+        )
+        heads = hds.get_data(kstpkper=kstpkper)
+        
+        # Plot vectors directly on the cross-section
+        quiver = xc.plot_discharge(
+            spdis,
+            head=heads,
+            ax=ax,
+            istep=istep,
+            jstep=jstep,
+            normalize=normalize,
+            scale=scale,
+            pivot=pivot,
+            color=color,
+            alpha=alpha,
+            **kwargs
+        )
+    except Exception as e:
+        # Fallback approach: compute component vectors manually
+        qx, qz = xc.get_flow_vector(cbc, hds, kstpkper=kstpkper)
+        
+        if istep > 1 or jstep > 1:
+            qx = qx[::istep, ::jstep]
+            qz = qz[::istep, ::jstep]
+            
+        if normalize:
+            mag = np.sqrt(qx**2 + qz**2)
+            mag[mag == 0] = 1.0
+            qx /= mag
+            qz /= mag
+
+        quiver = ax.quiver(
+            xc.pts[:, 0], xc.pts[:, 1], qx, qz, 
+            scale=scale, pivot=pivot, color=color, alpha=alpha, **kwargs
+        )
+
+    return quiver
 
 def numpyInterpolation(gwf, headArray, meshLayer, rasterRes):
 

@@ -286,5 +286,67 @@
                 20
             ]       
         ]
+    },
+    "c19_regionalSeawaterIntrusion": {
+        "maxRef": 500,
+        "multiplier": 1.5,
+        "overlapping": false,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "modelAoi"
+        },
+        "layerLayer": [
+            [
+                "ref",
+                "modelRef",
+                100
+            ],
+            [
+                "stream",
+                "riverBasin",
+                150
+            ],
+            [
+                "well",
+                "pumpingWells",
+                50
+            ],
+            [
+                "obs",
+                "obsPoints",
+                50
+            ],
+            [
+                "sea",
+                "seaGhb",
+                400
+            ]       
+        ]
+    },
+    "c20_theisNash": {
+        "maxRef": 10,
+        "multiplier": 1.5,
+        "overlapping": false,
+        "limitLayer": {
+            "limitName": "basin",
+            "limitShape": "modflowAoi"
+        },
+        "layerLayer": [
+            [
+                "mainChannel",
+                "mainChannel",
+                1
+            ],
+            [
+                "river",
+                "greatMiamiRiver",
+                2.5
+            ],
+            [
+                "ghb",
+                "ghbRegionalFlow",
+                4
+            ]       
+        ]
     }      
 }

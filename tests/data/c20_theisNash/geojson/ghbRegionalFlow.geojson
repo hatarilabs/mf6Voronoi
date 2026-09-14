@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "ghbRegionalFlow",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32616" } },
+"features": [
+{ "type": "Feature", "properties": { "FID": 0 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 697152.839320583851077, 4345711.11099711060524 ], [ 697180.643771462142467, 4345788.245925353839993 ] ] ] } },
+{ "type": "Feature", "properties": { "FID": 1 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 697243.428015380748548, 4345955.969548393040895 ], [ 697268.541712948237546, 4346026.826052244752645 ] ] ] } },
+{ "type": "Feature", "properties": { "FID": 2 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 697688.29922943294514, 4345781.967500961385667 ], [ 697717.897515851771459, 4345854.617840353399515 ] ] ] } },
+{ "type": "Feature", "properties": { "FID": 3 }, "geometry": { "type": "MultiLineString", "coordinates": [ [ [ 697585.15368585230317, 4345528.1397719765082 ], [ 697619.23656112246681, 4345610.656206840649247 ] ] ] } }
+]
+}

@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "modflowAoi",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32616" } },
+"features": [
+{ "type": "Feature", "properties": { "FID": 0, "nManning": 0.03, "areaType": "channel" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 697732.248200176050887, 4345861.793182514607906 ], [ 697591.432110244175419, 4345513.78908765129745 ], [ 697140.282471800106578, 4345705.729490487836301 ], [ 697265.850959637435153, 4346043.867489879019558 ], [ 697732.248200176050887, 4345861.793182514607906 ] ] ] ] } }
+]
+}

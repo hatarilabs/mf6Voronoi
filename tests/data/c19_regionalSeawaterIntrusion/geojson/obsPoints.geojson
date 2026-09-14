@@ -1,0 +1,33 @@
+{
+"type": "FeatureCollection",
+"name": "obsPoints",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32718" } },
+"features": [
+{ "type": "Feature", "properties": { "FID": 0, "Name": "OBS0", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 602827.0, 4086431.0 ] } },
+{ "type": "Feature", "properties": { "FID": 1, "Name": "OBS1", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 600551.0, 4089406.0 ] } },
+{ "type": "Feature", "properties": { "FID": 2, "Name": "OBS2", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 600551.0, 4089406.0 ] } },
+{ "type": "Feature", "properties": { "FID": 3, "Name": "OBS3", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 600551.0, 4089406.0 ] } },
+{ "type": "Feature", "properties": { "FID": 4, "Name": "OBS4", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 601172.0, 4088313.0 ] } },
+{ "type": "Feature", "properties": { "FID": 5, "Name": "OBS5", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 601172.0, 4088313.0 ] } },
+{ "type": "Feature", "properties": { "FID": 6, "Name": "OBS6", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 601172.0, 4088313.0 ] } },
+{ "type": "Feature", "properties": { "FID": 7, "Name": "OBS7", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 602586.0, 4086887.0 ] } },
+{ "type": "Feature", "properties": { "FID": 8, "Name": "OBS8", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 602586.0, 4086887.0 ] } },
+{ "type": "Feature", "properties": { "FID": 9, "Name": "OBS9", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 602586.0, 4086887.0 ] } },
+{ "type": "Feature", "properties": { "FID": 10, "Name": "OBS10", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 602586.0, 4086887.0 ] } },
+{ "type": "Feature", "properties": { "FID": 11, "Name": "OBS11", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 603858.0, 4083638.0 ] } },
+{ "type": "Feature", "properties": { "FID": 12, "Name": "OBS12", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 603674.0, 4084134.0 ] } },
+{ "type": "Feature", "properties": { "FID": 13, "Name": "OBS13", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 603301.0, 4084100.0 ] } },
+{ "type": "Feature", "properties": { "FID": 14, "Name": "OBS14", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 603301.0, 4084100.0 ] } },
+{ "type": "Feature", "properties": { "FID": 15, "Name": "OBS15", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 605872.0, 4080951.0 ] } },
+{ "type": "Feature", "properties": { "FID": 16, "Name": "OBS16", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 605872.0, 4080951.0 ] } },
+{ "type": "Feature", "properties": { "FID": 17, "Name": "OBS17", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 605472.0, 4080920.0 ] } },
+{ "type": "Feature", "properties": { "FID": 18, "Name": "OBS18", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 605030.0, 4081033.0 ] } },
+{ "type": "Feature", "properties": { "FID": 19, "Name": "OBS19", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 605030.0, 4081033.0 ] } },
+{ "type": "Feature", "properties": { "FID": 20, "Name": "OBS20", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 605980.0, 4080181.0 ] } },
+{ "type": "Feature", "properties": { "FID": 21, "Name": "OBS21", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 606297.73119180672802, 4080072.071455702185631 ] } },
+{ "type": "Feature", "properties": { "FID": 22, "Name": "OBS22", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 607238.0, 4077049.0 ] } },
+{ "type": "Feature", "properties": { "FID": 23, "Name": "OBS23", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 607395.0, 4075977.0 ] } },
+{ "type": "Feature", "properties": { "FID": 24, "Name": "OBS24", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 605205.682167919003405, 4083351.102047994732857 ] } },
+{ "type": "Feature", "properties": { "FID": 25, "Name": "OBS25", "Elev": -20.0 }, "geometry": { "type": "Point", "coordinates": [ 607426.0, 4079491.0 ] } }
+]
+}

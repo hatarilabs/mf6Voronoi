@@ -4,12 +4,12 @@
         "multiplier": 1.5,
         "limitLayer": {
             "limitName": "basin",
-            "limitShape": "catchment.shp"
+            "limitShape": "catchment"
         },
         "layerLayer": [
             [
                 "river",
-                "river_basin.shp",
+                "river_basin",
                 50
             ]
         ]
