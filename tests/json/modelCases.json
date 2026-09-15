@@ -1,0 +1,16 @@
+{
+"base_dirs": {
+    "case_gen_data": "/home/hatari/projects/mf6Voronoi/tests/data",
+    "mesh_gen_data": "/home/hatari/projects/mf6Voronoi/tests/output"
+  },
+  "mesh_name": {
+    "1": "c1_regionalAngascancha",
+    "14": "c14_infiltrationUnsaturated",
+    "15": "c15_regionalModelWaterReservoir",
+    "16": "c16_waterReservoirSeepage",
+    "19":"c19_regionalSeawaterIntrusion"    
+  },
+  "executables": {
+    "mf6": "modflowBin/mf6"
+  }
+}

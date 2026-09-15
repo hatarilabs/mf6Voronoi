@@ -1,48 +1,67 @@
 from datetime import datetime
-import os, sys, json, flopy
-import rasterio, flopy
-import geopandas as gpd 
+from pathlib import Path
+import os
+import sys
+import json
+import flopy
+import rasterio
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
-from shapely.geometry import MultiLineString
-from mf6Voronoi.tools.cellWork import getLayCellElevTupleFromRaster, getLayCellElevTupleFromElev, getLayCellElevTupleFromObs
+from shapely.geometry import MultiLineString, Point
+from mf6Voronoi.tools.cellWork import (
+    getLayCellElevTupleFromElev,
+    getLayCellElevTupleFromObs,
+)
+
+# --------------------------
+# Carga de Configuración de Rutas
+# --------------------------
+
+jsonPath = '../../json/modelCases.json'
+
+with open(jsonPath, "r") as f:
+    configDict = json.load(f)
+
+# --------------------------
+# Argumentos de CLI
+# --------------------------
 
 #processing argument
 if len(sys.argv) < 2:
     sys.exit(
-        "Usage: python script.py <caseName> <runType> <caseType> [<fromCase>] [<fileType>]\n\n"
+        "Usage: python script.py <caseName> <modelNumber>\n\n"
         "Arguments:\n"
         "  caseName   : Name of the test case\n"
         "  runType    : normalRun | parallelRun\n"
-        "  caseType   : casesDask | casesNormal\n"
+        "  modelMumber  : int\n"
     )
 
-caseName = sys.argv[1] 
+caseName = sys.argv[1]
+runType = sys.argv[2]
 
-if sys.argv[2] == 'normalRun':
+if runType == 'normalRun':
     print('Computing with normal CPU')
-elif sys.argv[2] == 'parallelRun':
+elif runType == 'parallelRun':
     print('Computing with parallelized computing')
 else:
-    sys.exit(
-        f"Invalid execution mode: '{sys.argv[2]}'. Expected 'normalRun' or 'parallelRun'."
-    )
+    sys.exit(f"Invalid execution mode: '{runType}'. Expected 'normalRun' or 'parallelRun'.")
 
+modelNumber = sys.argv[3]
 
 # --------------------------
 # Defining folders
 # --------------------------
 
-caseGenDataFolder = "/home/hatari/projects/mf6Voronoi/tests/data"
-meshGenDataFolder = "/home/hatari/projects/mf6Voronoi/tests/output" 
+caseGenDataFolder = configDict["base_dirs"]["case_gen_data"]
+meshGenDataFolder = configDict["base_dirs"]["mesh_gen_data"]
 
 # Get today's current date Format date: %d (day), %b (short month), %y (2-digit year)
 todayStr = datetime.now().strftime("%d%b%y")
 
-meshName = 'c19_regionalSeawaterIntrusion'
+meshName = configDict["mesh_name"][modelNumber]
 
 meshCaseDir = os.path.join(meshGenDataFolder, f"{caseName}_{todayStr}", sys.argv[2], meshName)
-
 jsonDir = os.path.join(meshCaseDir, 'json')
 rstDir = os.path.join(caseGenDataFolder,meshName,'rst')
 shpDir = os.path.join(caseGenDataFolder,meshName,'shp')
@@ -63,6 +82,8 @@ vertices = gridProps['vertices']       #vertex id and xy coordinates
 ncpl = gridProps['ncpl']               #number of cells per layer
 nvert = gridProps['nvert']             #number of verts
 centroids=gridProps['centroids']   
+
+##############hasta aqui copiar#############################
 
 #### Part 2b: Model construction and simulation
 #Extract dem values for each centroid of the voronois

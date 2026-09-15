@@ -18,7 +18,7 @@ if len(sys.argv) < 4:
         "  runType    : normalRun | parallelRun\n"
         "  caseType   : casesDask | casesNormal\n"
         "  fromCase   : Optional start index (default: 0)\n"
-        "  fileType   : shp | geojson (default: Shapefile)" \
+        "  fileType   : shp | geojson (default: Shapefile)\n" 
         "  debug      : True | False (default: False)"
     )
 
@@ -99,9 +99,15 @@ for meshName, meshDict in list(meshGenerationDict.items())[fromCase:]:
     else:
         overlapping = True
 
+    if 'fixVoronoi' in meshDict.keys():
+        fixVoronoi = meshDict['fixVoronoi']['status']
+    else:
+        fixVoronoi = False
+
+    print("############ Test Case ###############")
+    print("Resolviendo el caso: %s"%meshName)
 
     if useDask:
-
         #Create mesh object specifying the coarse mesh and the multiplier
         vorMesh = createVoronoi(meshName=meshName,
                                 maxRef = meshDict["maxRef"], 
@@ -146,5 +152,12 @@ for meshName, meshDict in list(meshGenerationDict.items())[fromCase:]:
             vorMesh.generateOrgDistVertices()
             vorMesh.createPointCloud()
             vorMesh.generateVoronoi()
+
+            if fixVoronoi:
+                vorMesh.checkVoronoiQuality(threshold=meshDict['fixVoronoi']['threshold'])
+                vorMesh.fixVoronoiShortSides()
+                vorMesh.generateVoronoi()
+                vorMesh.checkVoronoiQuality(threshold=meshDict['fixVoronoi']['threshold'])
+
             getVoronoiAsShp(vorMesh.modelDis, shapePath=outputShape)
     

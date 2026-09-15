@@ -161,7 +161,7 @@
     },
     "c14_infiltrationUnsaturated": {
         "maxRef": 10,
-        "multiplier": 1.2,
+        "multiplier": 2.45,
         "limitLayer": {
             "limitName": "basin",
             "limitShape": "modelLimit"
@@ -170,7 +170,7 @@
             [
                 "pond",
                 "infiltrationPond",
-                1
+                1.2
             ],
             [
                 "regionalFlow",
@@ -185,9 +185,13 @@
             [
                 "wells",
                 "wells",
-                1
+                1.5
             ]
-        ]
+        ],
+        "fixVoronoi":{
+            "status":true,
+            "threshold":0.005
+        }
     },
     "c15_regionalModelWaterReservoir": {
         "maxRef": 800,
@@ -202,7 +206,11 @@
                 "river_basin",
                 80
             ]        
-        ]
+        ],
+        "fixVoronoi":{
+            "status":true,
+            "threshold":0.01
+        }
     },
     "c16_waterReservoirSeepage": {
         "maxRef": 250,
@@ -228,7 +236,11 @@
                 "river_basin",
                 80
             ]       
-        ]
+        ],
+        "fixVoronoi":{
+            "status":true,
+            "threshold":0.01
+        }
     },
     "c17_regionalModelMineProject": {
         "maxRef": 800,

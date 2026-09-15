@@ -1,0 +1,9 @@
+For geometry generation:
+python geometryCheckTest.py test normalRun casesNormal 
+
+for disv generation:
+python meshGridCheck.py test normalRun casesNormal
+
+for model run:
+python runncer_c15.py test normalRun 15
+
