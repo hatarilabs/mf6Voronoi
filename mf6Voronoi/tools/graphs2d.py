@@ -14,6 +14,7 @@ import geopandas as gpd
 from skimage import measure
 from shapely.geometry import Point, LineString
 from flopy.plot import PlotCrossSection
+from scipy.interpolate import LinearNDInterpolator
 
 from scipy.interpolate import griddata
 #from mf6Voronoi.utils import isRunningInJupyter, printBannerHtml, printBannerText
@@ -138,99 +139,172 @@ def FlowVectorGenerator(gwf, backgroundImageDict=None,
     else:
         print("No Dis file was found")
 
-def crossSectionFlowVectorGenerator(model, cbc_file, head_file, line, ax=None, kstpkper=(0, 0), 
-                             istep=1, jstep=1, normalize=False, scale=None, 
-                             pivot='middle', color='black', alpha=0.8, **kwargs):
+def crossSectionFlowVectorGenerator(
+    gwf,
+    line,
+    head_file=None,
+    cbc_file=None,
+    ax=None,
+    kstpkper=(0, 0),
+    contourLevels=10,
+    plotArray=True,
+    plotContour=True,
+    plotVectors=True,
+    array_data=None,    # Máscara o array personalizado (ej. material_mask)
+    cmap_array='Reds',
+    alpha_array=0.6,
+    Lqmax=250.0,
+    quiver_color='b',
+    formato_es=None,
+    title=None,
+    **kwargs
+):
     """
-    Plot projected groundwater flow vectors in a 2D cross-section (PlotCrossSection).
-
-    Parameters
-    ----------
-    model : flopy.mf6.MFModel
-        MODFLOW 6 model instance.
-    cbc_file : str or flopy.utils.CellBudgetFile
-        Cell Budget File path or object.
-    head_file : str or flopy.utils.HeadFile
-        Head File path or object.
-    line : dict, list, or LineString
-        Cross-section line definition for PlotCrossSection.
-    ax : matplotlib.axes.Axes, optional
-        Target Matplotlib axis. If None, uses current axis (plt.gca()).
-    kstpkper : tuple of int, optional
-        Time step and stress period tuple (kstp, kper). Default is (0, 0).
-    istep : int, optional
-        Vertical sampling frequency (layer step). Default is 1.
-    jstep : int, optional
-        Horizontal sampling frequency along the profile. Default is 1.
-    normalize : bool, optional
-        If True, normalizes vector magnitudes to 1. Default is False.
-    scale : float, optional
-        Scaling factor for ax.quiver.
-    pivot : str, optional
-        Arrow pivot point ('tail', 'middle', 'tip'). Default is 'middle'.
-    color : str, optional
-        Vector arrow color. Default is 'black'.
-    alpha : float, optional
-        Transparency level (0 to 1). Default is 0.8.
-    **kwargs : dict
-        Additional arguments passed to PlotCrossSection.plot_discharge.
-
-    Returns
-    -------
-    quiver : matplotlib.quiver.Quiver
-        Generated Matplotlib quiver object.
+    Genera un corte transversal 2D proyectando cargas hidráulicas, isolíneas y 
+    vectores de flujo proyectados en la línea de sección mediante interpolación.
     """
     if ax is None:
         ax = plt.gca()
 
-    # Load budget and head files if file paths were passed as strings
-    cbc = flopy.utils.CellBudgetFile(cbc_file) if isinstance(cbc_file, str) else cbc_file
-    hds = flopy.utils.HeadFile(head_file) if isinstance(head_file, str) else head_file
+    # Normalizar formato de la línea de sección
+    if isinstance(line, dict):
+        line = {k.lower(): v for k, v in line.items()}
 
-    # Initialize FloPy's PlotCrossSection object
-    xc = PlotCrossSection(model=model, ax=ax, line=line)
+    # 1. Inicializar el corte transversal
+    xsect = PlotCrossSection(model=gwf, ax=ax, line=line, geographic_coords=True)
 
-    # Extract flow vectors / specific discharge
-    try:
-        spdis = flopy.utils.postprocessing.get_specific_discharge(
-            cbc, model, kstpkper=kstpkper
-        )
-        heads = hds.get_data(kstpkper=kstpkper)
-        
-        # Plot vectors directly on the cross-section
-        quiver = xc.plot_discharge(
-            spdis,
-            head=heads,
-            ax=ax,
-            istep=istep,
-            jstep=jstep,
-            normalize=normalize,
-            scale=scale,
-            pivot=pivot,
-            color=color,
-            alpha=alpha,
-            **kwargs
-        )
-    except Exception as e:
-        # Fallback approach: compute component vectors manually
-        qx, qz = xc.get_flow_vector(cbc, hds, kstpkper=kstpkper)
-        
-        if istep > 1 or jstep > 1:
-            qx = qx[::istep, ::jstep]
-            qz = qz[::istep, ::jstep]
+    # 2. Graficar Cargas e Isolíneas (o Array personalizado si se proporciona)
+    hds = None
+    if isinstance(head_file, str) and head_file:
+        try:
+            hds = flopy.utils.HeadFile(head_file, precision='double')
+        except Exception:
+            hds = flopy.utils.HeadFile(head_file, precision='single')
+    elif head_file is not None:
+        hds = head_file
+
+    if array_data is not None:
+        xsect.plot_array(array_data, cmap=cmap_array, alpha=alpha_array, ax=ax)
+    elif hds is not None and plotArray:
+        try:
+            heads = hds.get_data(kstpkper=kstpkper)
+            hdry_val = getattr(gwf, 'hdry', 1e30)
+            hnoflo_val = getattr(gwf, 'hnoflo', 1e30)
+            masked_vals = [1e30, -1e30, hdry_val, hnoflo_val]
+            xsect.plot_array(heads, masked_values=masked_vals, cmap='YlGnBu', ax=ax, alpha=0.6)
             
-        if normalize:
-            mag = np.sqrt(qx**2 + qz**2)
-            mag[mag == 0] = 1.0
-            qx /= mag
-            qz /= mag
+            if plotContour:
+                hactive = heads[(heads < 1e20) & (heads > -1e20)]
+                if len(hactive) > 0:
+                    levels = np.linspace(hactive.min(), hactive.max(), contourLevels)
+                    cs = xsect.contour_array(heads, levels=levels, masked_values=masked_vals,
+                                            linewidths=1.0, cmap='YlGnBu', ax=ax)
+                    texts = ax.clabel(cs, inline=True, fontsize=8, fmt="%.1f")
+                    for text in texts:
+                        text.set_color('darkblue')
+                        text.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='white')])
+        except Exception as e:
+            print(f"Error al graficar cargas/isolíneas: {e}")
 
-        quiver = ax.quiver(
-            xc.pts[:, 0], xc.pts[:, 1], qx, qz, 
-            scale=scale, pivot=pivot, color=color, alpha=alpha, **kwargs
-        )
+    # 3. Graficar Malla
+    xsect.plot_grid(ax=ax, lw=0.3, color='gray', alpha=0.4)
 
-    return quiver
+    # 4. Proyección y Graficación de Vectores de Flujo
+    if plotVectors is not None:
+
+        nlay = gwf.modelgrid.nlay
+
+        xzcenters = []
+        for key, pts in xsect.projpts.items():
+            # Calcula las coordenadas medias x e y de cada celda proyectada
+            x_avg = np.mean([pt[0] for pt in pts])
+            y_avg = np.mean([pt[1] for pt in pts])
+            xzcenters.append([x_avg,y_avg])
+
+        xzcenters = np.array(xzcenters)
+        nCellSection = int(xzcenters.shape[0]/nlay)
+
+        scen = xzcenters[:,0].reshape(nlay,nCellSection).T.flatten()
+        zcen = xzcenters[:,1].reshape(nlay,nCellSection).T.flatten()
+        # ================================================================
+        # Vector de orientación de la sección a partir de xsect.pts
+        xsvec = xsect.pts[1] - xsect.pts[0]
+        
+        # Calcula la ecuación de la recta y = mx + b
+        x0, y0 = xsect.pts[0]
+        x1, y1 = xsect.pts[1]
+        m = (y1 - y0) / (x1 - x0)
+        b = y0 - m * x0
+
+            # Calcula xcen2 usando xsect.pts como recta donde ycen2
+        if xsect.direction == 'y':
+            ycen = scen
+            xcen = (ycen - b) / m
+        else:
+            xcen = scen
+            ycen = m * xcen + b
+
+
+        # ================================================================
+        # Interpola los vectores de flujo en los centroides de cada celda de la sección
+        # kper = nper_mining + 1  # Periodo de estrés de la fase post-minería
+        kper = kstpkper[1]  # Periodo de estrés de la fase post-minería
+
+        cbc = gwf.output.budget()  # Cargar el archivo del budget de la simulación
+        spdis = cbc.get_data(text='DATA-SPDIS')
+        qx, qy, qz = flopy.utils.postprocessing.get_specific_discharge(spdis[kper], gwf)
+
+
+        # La dimensión de xq es ncpl. Crea un array repitiendo xq nlay veces
+        xc = np.repeat(gwf.modelgrid.xcellcenters[:,np.newaxis], nlay, axis=1).T  # Repite xq para cada capa
+        yc = np.repeat(gwf.modelgrid.ycellcenters[:,np.newaxis], nlay, axis=1).T  # Repite yq para cada capa
+        zc = gwf.modelgrid.zcellcenters
+
+
+        points = np.column_stack((
+            xc.ravel(), yc.ravel(), zc.ravel()
+        ))    # (N, 3), donde N = nlay * nrow * ncol
+
+
+        qx = qx.ravel()
+        qy = qy.ravel()
+        qz = qz.ravel()
+
+
+        # Crea una función de interpolación para los vectores de flujo
+
+
+        # interp_func = LinearNDInterpolator(points, np.column_stack((qx, qy, qz)))
+        vf_x = LinearNDInterpolator(points, qx)
+        vf_y = LinearNDInterpolator(points, qy)
+        vf_z = LinearNDInterpolator(points, qz)
+        qxi = []
+        qyi = []
+        qzi = []
+        for xi,yi,zi in zip(xcen,ycen,zcen):
+            qxi.append(vf_x(xi,yi,zi))
+            qyi.append(vf_y(xi,yi,zi))
+            qzi.append(vf_z(xi,yi,zi))
+
+
+        qxi = np.array(qxi)
+        qyi = np.array(qyi)
+        qzi = np.array(qzi)
+
+
+        qxp = np.concatenate((qxi[:,np.newaxis], qyi[:,np.newaxis]), axis=1)
+        # Calcula qxsect proyectando qxp sobre el vector de la sección xsvec
+        qxs = (qxp @ xsvec) / np.linalg.norm(xsvec)
+
+
+        lc = xsect.plot_grid(lw=0.1)
+        #thick = xsect.plot_array(material_mask, cmap='Reds', alpha=0.6)
+        ax.scatter(scen, zcen, s=1,alpha=0.5)
+        qxsmax = np.nanmax(np.abs(qxs))
+        
+        ax.quiver(scen, zcen, qxs, qzi, angles='xy', scale_units='xy', scale=qxsmax/Lqmax, color='b')
+
+    return xsect
 
 def numpyInterpolation(gwf, headArray, meshLayer, rasterRes):
 

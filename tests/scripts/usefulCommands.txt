@@ -5,5 +5,7 @@ for disv generation:
 python meshGridCheck.py test normalRun casesNormal
 
 for model run:
-python runncer_c15.py test normalRun 15
+python runner_c15.py test normalRun 15
 
+for plot check:
+python plotCheck.py test normalRun

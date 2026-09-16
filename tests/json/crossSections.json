@@ -1,0 +1,19 @@
+{
+  "cross_sections": {
+    "c1_regionalAngascancha": {
+      "shpName": "crossSection1.shp"
+    },
+    "c14_infiltrationUnsaturated": {
+      "shpName": "crossSectionTotal.shp"
+    },
+    "c15_regionalModelWaterReservoir": {
+      "shpName": "crossSectionRegional.shp"
+    },
+    "c16_waterReservoirSeepage": {
+      "shpName": "crossSectionReservoir.shp"
+    },
+    "c19_regionalSeawaterIntrusion": {
+      "shpName": "crossSection.shp"
+    }
+  }
+}

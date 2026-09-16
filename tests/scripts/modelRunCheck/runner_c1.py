@@ -179,12 +179,14 @@ riv = flopy.mf6.ModflowGwfdrn(gwf, stress_period_data=riverSpd)
 riv.plot(mflay=0)
 plt.show()
 
-#Set the Output Control and run simulation
 #oc
-head_filerecord = f"{gwf.name}.hds"
-oc = flopy.mf6.ModflowGwfoc(gwf,
-                            head_filerecord=head_filerecord,
-                            saverecord=[("HEAD", "LAST")])
+head_filerecord = f"{gwf.name}.hds" ## Org
+budget_filerecord = f"{gwf.name}.cbc" ## Org
+oc = flopy.mf6.ModflowGwfoc(gwf, ## Org
+                            head_filerecord=head_filerecord, ## Org
+                            budget_filerecord = budget_filerecord, ## Org
+                            saverecord=[("HEAD", "LAST"),("BUDGET","LAST")]) ## Org
+
 # Run the simulation
 sim.write_simulation()
 success, buff = sim.run_simulation()
