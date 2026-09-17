@@ -44,7 +44,8 @@ There are few requirements for the package. The most important one is that all t
 ## Tutorials & Learning Resources
 
 For hands-on guides covering mesh generation, GeoJSON integration, Dask parallel processing, and flow vector visualization, visit the official tutorial series:
-Complete Guide Collection: [Hatari Labs - Comprehensive MODFLOW 6 & mf6Voronoi Tutorials](https://hatarilabs.com/ih-en/comprehensive-modflow6-and-mf6voronoi-tutorials-collection)
+
+- **Complete Guide Collection:** [Hatari Labs - Comprehensive MODFLOW 6 & mf6Voronoi Tutorials](https://hatarilabs.com/ih-en/comprehensive-modflow6-and-mf6voronoi-tutorials-collection)
 
 ## Example
 
