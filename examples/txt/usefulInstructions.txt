@@ -22,3 +22,5 @@ python3 -m build
 upload
 twine upload dist/*
 ~/.local/bin/twine upload dist/*
+#for test
+~/.local/bin/twine upload --repository testpypi dist/*

@@ -5,6 +5,7 @@ import sys
 import json
 import flopy
 import rasterio
+import platform
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -68,7 +69,8 @@ rstDir = os.path.join(caseGenDataFolder,meshName,'rst')
 shpDir = os.path.join(caseGenDataFolder,meshName,'shp')
 modelWs = os.path.join(meshCaseDir, 'model')
 os.makedirs(modelWs, exist_ok=True)
-mfBin = os.path.join(caseGenDataFolder,'modflowBin','mf6')
+mf_ext = ".exe" if platform.system() == "Windows" else ""
+mfBin = os.path.join(caseGenDataFolder,'modflowBin',f'mf6{mf_ext}')
 
 # --------------------------
 # Model folder
